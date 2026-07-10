@@ -1,1 +1,1846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy RAG Analytics Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --card2: #f0f2f8;
+    --border: #dde2f0;
+    --accent: #2563eb;
+    --accent2: #7c3abf;
+    --green: #059669;
+    --red: #dc2626;
+    --orange: #d97706;
+    --yellow: #ca8a04;
+    --text: #1e2130;
+    --muted: #6b7280;
+    --font: 'Segoe UI', Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
 
+  /* ─── Nav ─────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.97); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0; padding: 0 28px;
+    height: 56px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .nav-brand { font-size: 15px; font-weight: 700; color: var(--accent); margin-right: 32px; white-space: nowrap; }
+  .nav-tabs { display: flex; gap: 2px; flex: 1; overflow-x: auto; }
+  .nav-tab {
+    padding: 6px 16px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; color: var(--muted); border: none; background: none;
+    white-space: nowrap; transition: all .15s;
+  }
+  .nav-tab:hover { color: var(--text); background: var(--card2); }
+  .nav-tab.active { color: var(--accent); background: rgba(37,99,235,.08); }
+  .nav-badge { background: var(--accent); color: #fff; border-radius: 8px; padding: 1px 6px; font-size: 10px; margin-left: 4px; }
+
+  /* ─── Page sections ───────────────────── */
+  .page { display: none; padding: 24px 28px; max-width: 1600px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ─── KPI cards ─────────────────────────── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; position: relative; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--kpi-color, var(--accent));
+  }
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ─── Charts grid ─────────────────────── */
+  .charts-row { display: grid; gap: 20px; margin-bottom: 20px; }
+  .col-2 { grid-template-columns: 1fr 1fr; }
+  .col-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .col-1-2 { grid-template-columns: 1fr 2fr; }
+  .col-2-1 { grid-template-columns: 2fr 1fr; }
+  .col-3-2 { grid-template-columns: 3fr 2fr; }
+
+  .chart-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .chart-title {
+    font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chart-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { max-height: 280px; }
+  .chart-wrap.tall canvas { max-height: 340px; }
+  .chart-wrap.short canvas { max-height: 200px; }
+
+  /* ─── Percentile badges ──────────────── */
+  .perc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .perc-item { background: var(--card2); border-radius: 8px; padding: 10px 12px; text-align: center; }
+  .perc-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .perc-val { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .perc-unit { font-size: 10px; color: var(--muted); }
+
+  /* ─── Section header ─────────────────── */
+  .section-header { margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .section-desc { font-size: 12px; color: var(--muted); }
+
+  /* ─── Filters bar ────────────────────── */
+  .filter-bar {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .filter-label { font-size: 12px; color: var(--muted); }
+  .filter-chip {
+    padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
+    background: none; color: var(--muted); cursor: pointer; font-size: 12px;
+    transition: all .15s;
+  }
+  .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-chip.active { background: rgba(37,99,235,.08); border-color: var(--accent); color: var(--accent); }
+
+  /* ─── Table ─────────────────────────── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th { background: var(--card2); color: var(--muted); text-align: left; padding: 8px 12px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  .data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .bar-cell { display: flex; align-items: center; gap: 8px; }
+  .bar-fill { height: 6px; border-radius: 3px; background: var(--accent); }
+
+  /* ─── Legend ─────────────────────────── */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ─── Info note ─────────────────────── */
+  .info-note {
+    background: rgba(37,99,235,.05); border: 1px solid rgba(37,99,235,.18);
+    border-radius: 8px; padding: 10px 14px; font-size: 11px; color: var(--muted);
+    margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .info-note span { color: var(--accent); font-size: 14px; }
+
+  /* ─── Responsive ─────────────────────── */
+  @media (max-width: 900px) {
+    .col-2, .col-3, .col-1-2, .col-2-1, .col-3-2 { grid-template-columns: 1fr; }
+    .page { padding: 16px; }
+    nav { padding: 0 16px; }
+  }
+
+  /* ─── Scrollbar ─────────────────────── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ─── Outcome Definitions Tooltip ───────────────────────── */
+  .def-tooltip-wrap { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+  .def-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    flex-shrink: 0; user-select: none;
+  }
+  .def-popover {
+    display: none; position: absolute; top: calc(100% + 8px); left: 0;
+    z-index: 200; width: 380px;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    font-size: 12px; line-height: 1.6;
+  }
+  .def-tooltip-wrap:hover .def-popover,
+  .def-tooltip-wrap:focus-within .def-popover { display: block; }
+  .def-popover-title { font-size: 11px; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
+  .def-row { margin-bottom: 8px; }
+  .def-row:last-child { margin-bottom: 0; }
+  .def-term { font-weight: 700; color: var(--text); }
+  .def-desc { color: var(--muted); }
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">&#9679; Policy RAG Analytics</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('overview')">Overview</button>
+    <button class="nav-tab" onclick="showPage('topics')">Policy Topics</button>
+    <button class="nav-tab" onclick="showPage('responses')">Response Outcomes</button>
+    <button class="nav-tab" onclick="showPage('timing')">Response Time</button>
+    <button class="nav-tab" onclick="showPage('behavior')">User Behavior</button>
+    <button class="nav-tab" onclick="showPage('documents')">Documents</button>
+    <button class="nav-tab" onclick="showPage('loa')" style="border-left:2px solid #dde2f0; margin-left:6px; padding-left:18px;">&#128203; LOA Use Cases</button>
+    <button class="nav-tab" onclick="showPage('sms')" style="border-left:2px solid #dde2f0; margin-left:6px; padding-left:18px;">&#128241; SMS Notifications</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: OVERVIEW
+══════════════════════════════════════════════ -->
+<div class="page active" id="page-overview">
+  <div class="section-header">
+    <div class="section-title">
+      <div class="def-tooltip-wrap">
+        Policy Search Overview
+        <span class="def-icon" tabindex="0">i</span>
+        <div class="def-popover">
+          <div class="def-popover-title">Outcome Definitions</div>
+          <div class="def-row">
+            <span class="def-term">Answered</span> —
+            <span class="def-desc">User's question was successfully resolved by Sage.</span>
+          </div>
+          <div class="def-row">
+            <span class="def-term">Needs More Info</span> —
+            <span class="def-desc">Sage identified the user's intent but required additional details or clarification before it could provide an answer or complete the case.</span>
+          </div>
+          <div class="def-row">
+            <span class="def-term">Out of Scope</span> —
+            <span class="def-desc">Sage identified the user's intent, but the request falls outside the supported Sage LOA use cases or available knowledge and cannot be handled by Sage.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section-desc">May 21 – Jun 22, 2026 &nbsp;·&nbsp; Single-turn RAG system &nbsp;·&nbsp; 502 total queries &nbsp;·&nbsp; 230 unique sessions</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" style="--kpi-color:#4f8ef7">
+      <div class="kpi-label">Total Queries</div>
+      <div class="kpi-value">502</div>
+      <div class="kpi-sub">across 230 sessions</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#2dd4a0">
+      <div class="kpi-label">Answered</div>
+      <div class="kpi-value">384</div>
+      <div class="kpi-sub">76.5% success rate</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#ffd54f">
+      <div class="kpi-label">Needs More Info</div>
+      <div class="kpi-value">2</div>
+      <div class="kpi-sub">follow-up required</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#d97706">
+      <div class="kpi-label">Out of Scope</div>
+      <div class="kpi-value">116</div>
+      <div class="kpi-sub">unsupported queries</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#f05f6e">
+      <div class="kpi-label">Blocked</div>
+      <div class="kpi-value">0</div>
+      <div class="kpi-sub">guardrail flagged</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#7c5cbf">
+      <div class="kpi-label">Avg Response Time</div>
+      <div class="kpi-value">16.1<span style="font-size:14px">s</span></div>
+      <div class="kpi-sub">p75 36.1s · p95 45.3s</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#4f8ef7">
+      <div class="kpi-label">Unique Sessions</div>
+      <div class="kpi-value">230</div>
+      <div class="kpi-sub">avg 2.2 queries/session</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#2dd4a0">
+      <div class="kpi-label">Policy Topics</div>
+      <div class="kpi-value">9</div>
+      <div class="kpi-sub">distinct leave categories</div>
+    </div>
+  </div>
+
+  <div class="info-note">
+    <span>ℹ</span>
+    <div>All 502 queries are fully classified. 384 answered with policy documents retrieved, 2 needed more context or clarification, 116 were out of scope, and 0 were blocked by guardrails.</div>
+  </div>
+
+  <div class="charts-row col-1-2">
+    <div class="chart-card">
+      <div class="chart-title">Response Outcomes</div>
+      <div class="chart-subtitle">Distribution of all 502 queries · May 21 – Jun 22, 2026</div>
+      <div class="chart-wrap"><canvas id="outcomeDonut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Monthly Query Volume</div>
+      <div class="chart-subtitle">Total queries ingested per month</div>
+      <div class="chart-wrap tall"><canvas id="monthlyTrend"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Daily Query Volume by Outcome</div>
+      <div class="chart-subtitle">Daily breakdown by outcome · May 21–31, 2026</div>
+      <div class="chart-wrap tall"><canvas id="dailyVolume"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Leave Type Trends Over Time</div>
+      <div class="chart-subtitle">Top 6 leave categories by month</div>
+      <div class="chart-wrap tall"><canvas id="leaveMonthly"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: POLICY TOPICS
+══════════════════════════════════════════════ -->
+<div class="page" id="page-topics">
+  <div class="section-header">
+    <div class="section-title">Policy Topic Modeling</div>
+    <div class="section-desc">Leave type distribution &amp; policy document categories from 502 policy searches · May 21 – Jun 22, 2026</div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Top Leave Types Searched</div>
+      <div class="chart-subtitle">Normalized leave categories (secondary classifier, n=202)</div>
+      <div class="chart-wrap tall"><canvas id="leaveBar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Policy Document Categories</div>
+      <div class="chart-subtitle">Primary doc category from top-ranked retrieved doc</div>
+      <div class="chart-wrap tall"><canvas id="docCatDonut"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-3-2">
+    <div class="chart-card">
+      <div class="chart-title">Out-of-Scope Query Topics</div>
+      <div class="chart-subtitle">102 queries that fell outside leave policy scope</div>
+      <div class="chart-wrap"><canvas id="ootBar"></canvas></div>
+      <div style="margin-top: 16px;">
+        <table class="data-table">
+          <thead><tr><th>Topic</th><th>Count</th><th>% of OOT</th><th>Volume</th></tr></thead>
+          <tbody id="ootTable"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Needs More Info vs Answered</div>
+      <div class="chart-subtitle">By leave type — indicates query clarity gaps</div>
+      <div class="chart-wrap tall"><canvas id="leaveOutcome"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: RESPONSE OUTCOMES
+══════════════════════════════════════════════ -->
+<div class="page" id="page-responses">
+  <div class="section-header">
+    <div class="section-title">Response Outcomes Analysis</div>
+    <div class="section-desc">When policy searches succeed, fail, or get blocked</div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns: repeat(4,1fr);">
+    <div class="kpi-card" style="--kpi-color:#2dd4a0">
+      <div class="kpi-label">Answered (with docs)</div>
+      <div class="kpi-value">76.5<span style="font-size:14px">%</span></div>
+      <div class="kpi-sub">384 of 502 queries</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#ffd54f">
+      <div class="kpi-label">Needs More Info</div>
+      <div class="kpi-value">31.8<span style="font-size:14px">%</span></div>
+      <div class="kpi-sub">149 queries</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#d97706">
+      <div class="kpi-label">Out of Scope</div>
+      <div class="kpi-value">21.7<span style="font-size:14px">%</span></div>
+      <div class="kpi-sub">102 queries</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#f05f6e">
+      <div class="kpi-label">Blocked by Guardrails</div>
+      <div class="kpi-value">0.0<span style="font-size:14px">%</span></div>
+      <div class="kpi-sub">0 queries</div>
+    </div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Classified Outcomes (Donut)</div>
+      <div class="chart-subtitle">502 queries — all processed through classification pipeline</div>
+      <div class="chart-wrap"><canvas id="classifiedDonut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Guardrail Safety Check Results</div>
+      <div class="chart-subtitle">Input safety screening distribution</div>
+      <div class="chart-wrap short"><canvas id="guardrailBar"></canvas></div>
+      <div class="perc-grid" style="margin-top:16px;">
+        <div class="perc-item">
+          <div class="perc-label">Safe</div>
+          <div class="perc-val" style="color:#2dd4a0">469</div>
+          <div class="kpi-sub">100% safe</div>
+        </div>
+        <div class="perc-item">
+          <div class="perc-label">Unsafe</div>
+          <div class="perc-val" style="color:#f05f6e">0</div>
+          <div class="perc-unit">0.0% blocked</div>
+        </div>
+        <div class="perc-item">
+          <div class="perc-label">Not Checked</div>
+          <div class="perc-val" style="color:#8b90a9">0</div>
+          <div class="perc-unit">all queries screened</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Daily Outcome Trends (Classified Traffic)</div>
+      <div class="chart-subtitle">Outcome breakdown by day — May 21 – Jun 13, 2026</div>
+      <div class="chart-wrap tall"><canvas id="dailyOutcome"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Outcome by Leave Type</div>
+      <div class="chart-subtitle">Success vs needs-more-info per leave category</div>
+      <div class="chart-wrap tall"><canvas id="leaveOutcome2"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: TIMING
+══════════════════════════════════════════════ -->
+<div class="page" id="page-timing">
+  <div class="section-header">
+    <div class="section-title">Response Time Analysis</div>
+    <div class="section-desc">Pipeline stage breakdown &amp; latency percentiles across 202 fully processed queries</div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns: repeat(6,1fr);">
+    <div class="kpi-card" style="--kpi-color:#4f8ef7">
+      <div class="kpi-label">Mean</div>
+      <div class="kpi-value">38.45<span style="font-size:14px">s</span></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#2dd4a0">
+      <div class="kpi-label">Median (P50)</div>
+      <div class="kpi-value">37.222<span style="font-size:14px">s</span></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#ffd54f">
+      <div class="kpi-label">P75</div>
+      <div class="kpi-value">41.0<span style="font-size:14px">s</span></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#d97706">
+      <div class="kpi-label">P90</div>
+      <div class="kpi-value">46.248<span style="font-size:14px">s</span></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#f05f6e">
+      <div class="kpi-label">P95</div>
+      <div class="kpi-value">49.599<span style="font-size:14px">s</span></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#7c5cbf">
+      <div class="kpi-label">Max</div>
+      <div class="kpi-value">96.9<span style="font-size:14px">s</span></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Pipeline Stage Breakdown (Avg seconds)</div>
+      <div class="chart-subtitle">Average time per processing stage — total avg 38.45s</div>
+      <div class="chart-wrap tall"><canvas id="timingBar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Response Time Percentile Distribution</div>
+      <div class="chart-subtitle">Latency waterfall across percentile bands</div>
+      <div class="chart-wrap"><canvas id="percBar"></canvas></div>
+      <div class="perc-grid">
+        <div class="perc-item">
+          <div class="perc-label">P25</div>
+          <div class="perc-val">34.519<span style="font-size:12px">s</span></div>
+        </div>
+        <div class="perc-item">
+          <div class="perc-label">P50</div>
+          <div class="perc-val">37.222<span style="font-size:12px">s</span></div>
+        </div>
+        <div class="perc-item">
+          <div class="perc-label">P95</div>
+          <div class="perc-val" style="color:#d97706">49.599<span style="font-size:12px">s</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-row col-1-2">
+    <div class="chart-card">
+      <div class="chart-title">Time Share by Stage</div>
+      <div class="chart-subtitle">% contribution to total latency</div>
+      <div class="chart-wrap"><canvas id="timingPie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Avg Response Time by Leave Type</div>
+      <div class="chart-subtitle">Educational queries resolve fastest; Work Comp takes longest</div>
+      <div class="chart-wrap tall"><canvas id="ltTimeBar"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: USER BEHAVIOR
+══════════════════════════════════════════════ -->
+<div class="page" id="page-behavior">
+  <div class="section-header">
+    <div class="section-title">User Behavior After Policy Search</div>
+    <div class="section-desc">Session depth, temporal patterns, and engagement signals</div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Session Query Depth</div>
+      <div class="chart-subtitle">How many queries per session — 230 sessions total</div>
+      <div class="chart-wrap"><canvas id="sessionDepth"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Query Volume by Hour of Day (UTC)</div>
+      <div class="chart-subtitle">When users search for policy information</div>
+      <div class="chart-wrap"><canvas id="hourBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Query Volume by Day of Week</div>
+      <div class="chart-subtitle">Weekly usage distribution</div>
+      <div class="chart-wrap"><canvas id="dowBar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Need More Info Rate by Leave Type</div>
+      <div class="chart-subtitle">% of classified queries requiring follow-up clarification</div>
+      <div class="chart-wrap"><canvas id="needInfoBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-1-2">
+    <div class="chart-card">
+      <div class="chart-title">Session Engagement</div>
+      <div class="chart-subtitle">Session depth breakdown</div>
+      <div style="margin-top: 8px;">
+        <table class="data-table">
+          <thead><tr><th>Queries/Session</th><th>Sessions</th><th>% of Sessions</th></tr></thead>
+          <tbody id="sessionTable"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Daily Classified Traffic</div>
+      <div class="chart-subtitle">In-scope vs out-of-scope daily trend</div>
+      <div class="chart-wrap tall"><canvas id="dailyClassified"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: DOCUMENTS
+══════════════════════════════════════════════ -->
+<div class="page" id="page-documents">
+  <div class="section-header">
+    <div class="section-title">Policy Documents Analysis</div>
+    <div class="section-desc">Most-referenced source documents retrieved by the RAG pipeline</div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card" style="grid-column: 1 / -1;">
+      <div class="chart-title">Top 12 Most Referenced Policy Documents</div>
+      <div class="chart-subtitle">Total times a document appeared in any retrieved result set (max 10 docs per query)</div>
+      <div class="chart-wrap" style="height:340px; position:relative;"><canvas id="topDocsBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Document Reference Frequency Table</div>
+      <div class="chart-subtitle">With relative usage bar</div>
+      <table class="data-table" style="margin-top:4px;">
+        <thead><tr><th>#</th><th>Document</th><th>References</th><th>Share</th></tr></thead>
+        <tbody id="docsTable"></tbody>
+      </table>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Document Category Breakdown</div>
+      <div class="chart-subtitle">Searches grouped by retrieved doc policy area</div>
+      <div class="chart-wrap tall"><canvas id="docCatBar"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const D = {"kpis": {"total": 502, "answered": 384, "out_of_scope": 116, "needs_more_info": 2, "blocked": 0, "avg_response_time": 16.05, "unique_sessions": 230, "success_rate": 76.5}, "outcome_dist": {"Answered": 384, "Needs More Info": 2, "Out of Scope": 116, "Blocked": 0}, "leave_types": {"labels": ["FMLA / Family Medical", "Personal Leave", "Child Bonding / Parental", "Family Caregiver", "Medical Leave", "Military / USERRA", "Educational Leave"], "values": [1138, 406, 245, 126, 65, 49, 40]}, "doc_categories": {"labels": ["FMLA Policy", "Personal Leave", "Child Bonding", "Family Caregiver", "Medical Leave", "Military Leave", "Educational Leave"], "values": [1138, 406, 245, 126, 65, 49, 40]}, "top_docs": {"labels": ["FMLA Policy Final 03.20.2024.pdf", "PERSONAL LEAVE POLICY 02.02.2025.pdf", "Company Child Bonding Policy 08.01.2025.pdf", "Company Family Caregiver Leave 08.01.2025.pdf", "Company Medical Leave Policy 02.02.2025.pdf", "USERRA and Military Leave Policy 09.01.2024.pdf", "Educational Leave of Absence Policy 08.01.2025.pdf"], "values": [1138, 406, 245, 126, 65, 49, 40]}, "daily_volume": {"dates": ["2026-05-21", "2026-05-22", "2026-05-24", "2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-05-31", "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12", "2026-06-13", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19", "2026-06-20", "2026-06-21", "2026-06-22"], "series": {"Answered": [65, 25, 8, 0, 26, 61, 13, 24, 3, 12, 11, 18, 26, 22, 5, 4, 12, 4, 7, 3, 3, 0, 9, 4, 1, 2, 13, 2, 1, 0], "Needs More Info": [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Out of Scope": [11, 8, 11, 1, 8, 12, 3, 6, 0, 1, 2, 2, 3, 2, 1, 0, 3, 4, 3, 1, 6, 1, 6, 5, 2, 3, 2, 1, 3, 5], "Blocked": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}}, "hour_dist": {"hours": ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"], "values": [4, 3, 7, 13, 15, 6, 2, 0, 0, 1, 2, 2, 27, 20, 57, 62, 33, 46, 50, 36, 60, 33, 13, 10]}, "dow_dist": {"days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "values": [49, 64, 106, 131, 112, 10, 30]}, "time_breakdown": {"labels": ["Query Expansion", "Similarity Search", "Reranking", "Prompt Building", "LLM Response"], "values": [6.16, 0.702, 0.0, 0.062, 9.122]}, "response_time_dist": {"p25": 14.8, "p50": 16.9, "p75": 36.056, "p90": 40.993, "p95": 45.317, "mean": 16.05, "max": 96.856}, "session_depth": {"labels": ["1", "2", "3", "4", "5", "6", "7+"], "values": [87, 70, 42, 17, 7, 5, 2]}, "guardrail": {"labels": ["Safe", "Unsafe", "Not Checked"], "values": [502, 0, 0]}, "oot_topics": {"labels": ["Other", "LOA Navigation", "Training/Courses", "Personal Details", "Claims/Apply", "Attendance/Time", "HR Events", "Work Schedule"], "values": [25, 24, 12, 9, 9, 8, 3, 3]}, "monthly_trends": {"months": ["2026-05", "2026-06"], "values": [287, 215]}, "lt_response_time": {"labels": ["FMLA / Family Medical", "Educational Leave", "Child Bonding / Parental", "Military / USERRA", "Family Caregiver", "Personal Leave", "Medical Leave"], "values": [15.8, 16.2, 16.6, 16.9, 17.1, 17.5, 18.9]}, "leave_monthly": {"months": ["2026-05", "2026-06"], "series": {"FMLA / Family Medical": [750, 388], "Personal Leave": [280, 126], "Child Bonding / Parental": [160, 85], "Family Caregiver": [85, 41], "Medical Leave": [50, 15]}}, "leave_by_outcome": {"labels": ["Child Bonding / Parental", "Medical Leave", "Educational Leave", "FMLA / Family Medical", "Family Caregiver", "Military / USERRA", "Personal Leave"], "answered": [230, 58, 36, 1050, 114, 44, 362], "needs_info": [2, 1, 1, 2, 1, 1, 2]}};
+
+// ── Colors ───────────────────────────────────────────────────────────────────
+const C = {
+  blue: '#2563eb', purple: '#7c3abf', green: '#059669',
+  red: '#dc2626', orange: '#d97706', yellow: '#ca8a04',
+  teal: '#0891b2', pink: '#db2777', lime: '#65a30d', indigo: '#4f46e5',
+  grid: 'rgba(200,210,230,0.7)', text: '#6b7280', white: '#1e2130'
+};
+const PALETTE = [C.blue, C.green, C.orange, C.red, C.purple, C.teal, C.yellow, C.pink, C.lime, C.indigo, '#ea580c'];
+const OUTCOME_COLORS = { Answered: C.green, 'Needs More Info': '#b45309', 'Out of Scope': C.orange, Blocked: C.red };
+
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', { display: false }); // off by default, enable per-chart
+Chart.defaults.color = C.text;
+Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+Chart.defaults.font.size = 11;
+
+function gridOpts() {
+  return { color: C.grid, drawBorder: false };
+}
+function axisOpts(title) {
+  return {
+    grid: gridOpts(),
+    ticks: { color: C.text },
+    title: title ? { display: true, text: title, color: C.text, font: { size: 10 } } : undefined
+  };
+}
+
+// ── Page navigation ───────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Chart builders ────────────────────────────────────────────────────────────
+
+// 1. Outcome donut (overview)
+new Chart(document.getElementById('outcomeDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(D.outcome_dist),
+    datasets: [{
+      data: Object.values(D.outcome_dist),
+      backgroundColor: Object.keys(D.outcome_dist).map(k => OUTCOME_COLORS[k] || C.blue),
+      borderWidth: 2, borderColor: '#ffffff', hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyleWidth: 8 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString()} (${(ctx.raw/D.kpis.total*100).toFixed(1)}%)` } }
+    },
+    cutout: '65%'
+  }
+});
+
+// 2. Monthly trend
+new Chart(document.getElementById('monthlyTrend'), {
+  type: 'bar',
+  data: {
+    labels: D.monthly_trends.months,
+    datasets: [{
+      label: 'Total Queries',
+      data: D.monthly_trends.values,
+      backgroundColor: PALETTE.map(c => c + 'cc'),
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toLocaleString()} queries` } }
+    },
+    scales: { x: axisOpts(), y: { ...axisOpts('Queries'), beginAtZero: true } }
+  }
+});
+
+// 3. Daily volume stacked
+const classifiedDates = D.daily_volume.dates;
+const classifiedSeries = {};
+['Answered','Out of Scope','Needs More Info','Blocked'].forEach(k => {
+  classifiedSeries[k] = D.daily_volume.series[k];
+});
+
+new Chart(document.getElementById('dailyVolume'), {
+  type: 'bar',
+  data: {
+    labels: classifiedDates,
+    datasets: Object.entries(classifiedSeries).map(([k,v]) => ({
+      label: k, data: v,
+      backgroundColor: OUTCOME_COLORS[k] + 'cc',
+      stack: 'a', borderRadius: 2
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+    scales: {
+      x: { ...axisOpts(), ticks: { color: C.text, maxRotation: 45 } },
+      y: { ...axisOpts('Queries'), stacked: true, beginAtZero: true }
+    }
+  }
+});
+
+// 4. Leave monthly trend
+const leaveColors = [C.blue, C.orange, C.green, C.teal, C.purple, C.yellow];
+new Chart(document.getElementById('leaveMonthly'), {
+  type: 'line',
+  data: {
+    labels: D.leave_monthly.months,
+    datasets: Object.entries(D.leave_monthly.series).map(([k,v], i) => ({
+      label: k, data: v,
+      borderColor: leaveColors[i], backgroundColor: leaveColors[i] + '20',
+      tension: 0.4, fill: false, pointRadius: 5, borderWidth: 2
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10 } } },
+    scales: { x: axisOpts(), y: { ...axisOpts('Queries'), beginAtZero: true } }
+  }
+});
+
+// 5. Leave bar (topics page)
+new Chart(document.getElementById('leaveBar'), {
+  type: 'bar',
+  data: {
+    labels: D.leave_types.labels,
+    datasets: [{
+      data: D.leave_types.values,
+      backgroundColor: PALETTE,
+      borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw} searches (${(ctx.raw/D.leave_types.values.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)` } }
+    },
+    scales: {
+      x: { ...axisOpts('Searches'), beginAtZero: true },
+      y: axisOpts()
+    }
+  }
+});
+
+// 6. Doc cat donut
+new Chart(document.getElementById('docCatDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: D.doc_categories.labels.slice(0,8),
+    datasets: [{
+      data: D.doc_categories.values.slice(0,8),
+      backgroundColor: PALETTE,
+      borderWidth: 2, borderColor: '#ffffff', hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { padding: 8, usePointStyle: true, pointStyleWidth: 8, font: { size: 10 } } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString()}` } }
+    },
+    cutout: '60%'
+  }
+});
+
+// 7. OOT bar
+new Chart(document.getElementById('ootBar'), {
+  type: 'bar',
+  data: {
+    labels: D.oot_topics.labels,
+    datasets: [{ data: D.oot_topics.values, backgroundColor: [C.orange+'cc',C.red+'cc',C.purple+'cc',C.teal+'cc',C.yellow+'cc'], borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: axisOpts(), y: { ...axisOpts('Queries'), beginAtZero: true } }
+  }
+});
+
+// Populate OOT table
+const ootTotal = D.oot_topics.values.reduce((a,b)=>a+b,0);
+document.getElementById('ootTable').innerHTML = D.oot_topics.labels.map((l,i) => {
+  const pct = (D.oot_topics.values[i]/ootTotal*100).toFixed(1);
+  return `<tr><td>${l}</td><td>${D.oot_topics.values[i]}</td><td>${pct}%</td><td><div class="bar-cell"><div class="bar-fill" style="width:${pct}%; background:${C.orange}; max-width:100px;"></div></div></td></tr>`;
+}).join('');
+
+// 8. Leave outcome stacked
+new Chart(document.getElementById('leaveOutcome'), {
+  type: 'bar',
+  data: {
+    labels: D.leave_by_outcome.labels,
+    datasets: [
+      { label: 'Answered', data: D.leave_by_outcome.answered, backgroundColor: C.green+'cc', stack: 'a', borderRadius: 2 },
+      { label: 'Needs More Info', data: D.leave_by_outcome.needs_info, backgroundColor: C.yellow+'cc', stack: 'a', borderRadius: 2 }
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+    scales: { x: { ...axisOpts(), stacked: true, beginAtZero: true }, y: { ...axisOpts(), stacked: true } }
+  }
+});
+
+// 9. Classified donut (responses page)
+new Chart(document.getElementById('classifiedDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Answered','Needs More Info','Out of Scope','Blocked'],
+    datasets: [{
+      data: [D.kpis.answered, D.kpis.needs_more_info, D.kpis.out_of_scope, D.kpis.blocked],
+      backgroundColor: [C.green, '#b45309', C.orange, C.red],
+      borderWidth: 2, borderColor: '#ffffff', hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${(ctx.raw/D.kpis.total*100).toFixed(1)}%)` } }
+    },
+    cutout: '65%'
+  }
+});
+
+// 10. Guardrail bar
+new Chart(document.getElementById('guardrailBar'), {
+  type: 'bar',
+  data: {
+    labels: D.guardrail.labels,
+    datasets: [{ data: D.guardrail.values, backgroundColor: [C.green+'cc', C.red+'cc', '#cbd5e1'], borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: axisOpts(), y: { ...axisOpts(), beginAtZero: true } }
+  }
+});
+
+// 11. Daily outcome (responses page) - duplicate with less processing
+new Chart(document.getElementById('dailyOutcome'), {
+  type: 'line',
+  data: {
+    labels: classifiedDates,
+    datasets: ['Answered','Out of Scope','Needs More Info','Blocked'].map(k => ({
+      label: k, data: classifiedSeries[k],
+      borderColor: OUTCOME_COLORS[k], backgroundColor: OUTCOME_COLORS[k] + '15',
+      tension: 0.3, fill: false, pointRadius: 2, borderWidth: 2
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+    scales: {
+      x: { ...axisOpts(), ticks: { color: C.text, maxRotation: 45 } },
+      y: { ...axisOpts('Queries'), beginAtZero: true }
+    }
+  }
+});
+
+// 12. Leave outcome 2 (same as 8)
+new Chart(document.getElementById('leaveOutcome2'), {
+  type: 'bar',
+  data: {
+    labels: D.leave_by_outcome.labels,
+    datasets: [
+      { label: 'Answered', data: D.leave_by_outcome.answered, backgroundColor: C.green+'cc', stack: 'a', borderRadius: 2 },
+      { label: 'Needs More Info', data: D.leave_by_outcome.needs_info, backgroundColor: C.yellow+'cc', stack: 'a', borderRadius: 2 }
+    ]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+    scales: { x: { ...axisOpts(), stacked: true, beginAtZero: true }, y: { ...axisOpts(), stacked: true } }
+  }
+});
+
+// 13. Timing bar
+new Chart(document.getElementById('timingBar'), {
+  type: 'bar',
+  data: {
+    labels: D.time_breakdown.labels,
+    datasets: [{
+      label: 'Avg seconds', data: D.time_breakdown.values,
+      backgroundColor: PALETTE, borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw}ms (${(ctx.raw/D.kpis.avg_response_time*100).toFixed(1)}% of total)` } }
+    },
+    scales: { x: { ...axisOpts('Seconds'), beginAtZero: true }, y: axisOpts() }
+  }
+});
+
+// 14. Percentile bar
+new Chart(document.getElementById('percBar'), {
+  type: 'bar',
+  data: {
+    labels: ['P25','P50','P75','P90','P95'],
+    datasets: [{
+      label: 'Response Time (s)',
+      data: [32.05, 37.93, 45.44, 56.81, 66.6],
+      backgroundColor: [C.green+'cc', C.blue+'cc', C.yellow+'cc', C.orange+'cc', C.red+'cc'],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: axisOpts(), y: { ...axisOpts('Seconds'), beginAtZero: true } }
+  }
+});
+
+// 15. Timing pie
+const totalTime = D.time_breakdown.values.reduce((a,b)=>a+b,0);
+new Chart(document.getElementById('timingPie'), {
+  type: 'doughnut',
+  data: {
+    labels: D.time_breakdown.labels,
+    datasets: [{
+      data: D.time_breakdown.values,
+      backgroundColor: PALETTE,
+      borderWidth: 2, borderColor: '#ffffff', hoverOffset: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 6, usePointStyle: true, font: { size: 10 } } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}s (${(ctx.raw/totalTime*100).toFixed(1)}%)` } }
+    },
+    cutout: '55%'
+  }
+});
+
+// 16. LT response time bar
+new Chart(document.getElementById('ltTimeBar'), {
+  type: 'bar',
+  data: {
+    labels: D.lt_response_time.labels,
+    datasets: [{
+      label: 'Avg seconds', data: D.lt_response_time.values,
+      backgroundColor: D.lt_response_time.values.map(v => v < 35 ? C.green+'cc' : v < 45 ? C.blue+'cc' : v < 55 ? C.yellow+'cc' : C.orange+'cc'),
+      borderRadius: 4
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw}s avg` } }
+    },
+    scales: {
+      x: { ...axisOpts('Seconds'), beginAtZero: true, min: 25 },
+      y: axisOpts()
+    }
+  }
+});
+
+// 17. Session depth
+new Chart(document.getElementById('sessionDepth'), {
+  type: 'bar',
+  data: {
+    labels: D.session_depth.labels,
+    datasets: [{
+      label: 'Sessions', data: D.session_depth.values,
+      backgroundColor: PALETTE, borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw} sessions (${(ctx.raw/D.kpis.unique_sessions*100).toFixed(1)}%)` } }
+    },
+    scales: { x: { ...axisOpts('Queries/Session'), }, y: { ...axisOpts('Sessions'), beginAtZero: true } }
+  }
+});
+
+// Session table
+const sTotal = D.session_depth.values.reduce((a,b)=>a+b,0);
+document.getElementById('sessionTable').innerHTML = D.session_depth.labels.map((l,i) => {
+  const v = D.session_depth.values[i];
+  return `<tr><td>${l}</td><td>${v}</td><td>${(v/sTotal*100).toFixed(1)}%</td></tr>`;
+}).join('');
+
+// 18. Hour bar
+const hourColors = D.hour_dist.values.map(v => v > 100 ? C.blue : v > 50 ? C.teal + 'cc' : '#cbd5e1');
+new Chart(document.getElementById('hourBar'), {
+  type: 'bar',
+  data: {
+    labels: D.hour_dist.hours,
+    datasets: [{
+      label: 'Queries', data: D.hour_dist.values,
+      backgroundColor: hourColors, borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { ...axisOpts('Hour (UTC)'), ticks: { maxRotation: 45 } }, y: { ...axisOpts('Queries'), beginAtZero: true } }
+  }
+});
+
+// 19. DoW bar
+const dowColors = D.dow_dist.values.map(v => v > 300 ? C.blue : v > 100 ? C.teal + 'cc' : '#cbd5e1');
+new Chart(document.getElementById('dowBar'), {
+  type: 'bar',
+  data: {
+    labels: D.dow_dist.days,
+    datasets: [{ label: 'Queries', data: D.dow_dist.values, backgroundColor: dowColors, borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: axisOpts(), y: { ...axisOpts('Queries'), beginAtZero: true } }
+  }
+});
+
+// 20. Need more info rate by leave type
+const niLabels = D.leave_by_outcome.labels;
+const niRate = niLabels.map((_, i) => {
+  const total = D.leave_by_outcome.answered[i] + D.leave_by_outcome.needs_info[i];
+  return total > 0 ? parseFloat((D.leave_by_outcome.needs_info[i] / total * 100).toFixed(1)) : 0;
+});
+new Chart(document.getElementById('needInfoBar'), {
+  type: 'bar',
+  data: {
+    labels: niLabels,
+    datasets: [{
+      label: '% Needs More Info',
+      data: niRate,
+      backgroundColor: niRate.map(v => v > 25 ? C.orange + 'cc' : v > 15 ? C.yellow + 'cc' : C.green + 'cc'),
+      borderRadius: 4
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw}% of queries need clarification` } }
+    },
+    scales: {
+      x: { ...axisOpts('%'), beginAtZero: true, max: 40 },
+      y: axisOpts()
+    }
+  }
+});
+
+// 21. Daily classified (behavior page)
+new Chart(document.getElementById('dailyClassified'), {
+  type: 'bar',
+  data: {
+    labels: classifiedDates,
+    datasets: [
+      { label: 'Answered', data: classifiedSeries['Answered'], backgroundColor: C.green+'bb', stack: 'a', borderRadius: 2 },
+      { label: 'Needs Info', data: classifiedSeries['Needs More Info'], backgroundColor: C.yellow+'bb', stack: 'a', borderRadius: 2 },
+      { label: 'Out of Scope', data: classifiedSeries['Out of Scope'], backgroundColor: C.orange+'bb', stack: 'a', borderRadius: 2 },
+      { label: 'Blocked', data: classifiedSeries['Blocked'], backgroundColor: C.red+'bb', stack: 'a', borderRadius: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+    scales: {
+      x: { ...axisOpts(), stacked: true, ticks: { maxRotation: 45 } },
+      y: { ...axisOpts('Queries'), stacked: true, beginAtZero: true }
+    }
+  }
+});
+
+// 22. Top docs bar (documents page)
+const shortLabels = D.top_docs.labels.map(l => l.length > 45 ? l.substring(0,43)+'…' : l);
+new Chart(document.getElementById('topDocsBar'), {
+  type: 'bar',
+  data: {
+    labels: shortLabels,
+    datasets: [{
+      label: 'Total References', data: D.top_docs.values,
+      backgroundColor: PALETTE, borderRadius: 4
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: ctx => D.top_docs.labels[ctx[0].dataIndex],
+          label: ctx => ` ${ctx.raw.toLocaleString()} references`
+        }
+      }
+    },
+    scales: {
+      x: { ...axisOpts('References'), beginAtZero: true },
+      y: { ...axisOpts(), ticks: { color: C.text, font: { size: 10 } } }
+    }
+  }
+});
+
+// Docs table
+const maxRef = Math.max(...D.top_docs.values);
+document.getElementById('docsTable').innerHTML = D.top_docs.labels.map((l, i) => {
+  const pct = (D.top_docs.values[i]/maxRef*100).toFixed(0);
+  const short = l.length > 50 ? l.substring(0,48)+'…' : l;
+  return `<tr>
+    <td style="color:#6b7280">${i+1}</td>
+    <td title="${l}">${short}</td>
+    <td>${D.top_docs.values[i].toLocaleString()}</td>
+    <td><div class="bar-cell"><div class="bar-fill" style="width:${pct}%; max-width:80px;"></div></div></td>
+  </tr>`;
+}).join('');
+
+// 23. Doc cat bar (documents page)
+new Chart(document.getElementById('docCatBar'), {
+  type: 'bar',
+  data: {
+    labels: D.doc_categories.labels,
+    datasets: [{
+      label: 'Searches', data: D.doc_categories.values,
+      backgroundColor: PALETTE, borderRadius: 4
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { ...axisOpts('Searches'), beginAtZero: true }, y: axisOpts() }
+  }
+});
+</script>
+<!-- ══════════════════════════════════════════════
+     PAGE: LOA USE CASES
+══════════════════════════════════════════════ -->
+<div class="page" id="page-loa">
+  <div class="section-header">
+    <div class="section-title">LOA Use Cases — SAGE Platform</div>
+    <div class="section-desc">968 use-case sessions · 524 unique users · 700 sessions · May 21 – Jun 22, 2026 · Kroger enterprise</div>
+  </div>
+
+  <!-- Use Case Pills -->
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="background:#eff6ff;border:1.5px solid #2563eb;border-radius:10px;padding:12px 20px;flex:1;min-width:150px;">
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Policy Assistant</div>
+      <div style="font-size:32px;font-weight:700;color:#1e2130;line-height:1;">365</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;">interactions &nbsp;·&nbsp; <span style="color:#d97706;font-weight:600;">43% success</span></div>
+    </div>
+    <div style="background:#faf5ff;border:1.5px solid #7c3abf;border-radius:10px;padding:12px 20px;flex:1;min-width:150px;">
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">LOA Request Process</div>
+      <div style="font-size:32px;font-weight:700;color:#1e2130;line-height:1;">305</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;">cases &nbsp;·&nbsp; <span style="color:#059669;font-weight:600;">94% success</span></div>
+    </div>
+    <div style="background:#f0fdf4;border:1.5px solid #059669;border-radius:10px;padding:12px 20px;flex:1;min-width:150px;">
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">View LOA</div>
+      <div style="font-size:32px;font-weight:700;color:#1e2130;line-height:1;">193</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;">cases &nbsp;·&nbsp; <span style="color:#059669;font-weight:600;">94% success</span></div>
+    </div>
+    <div style="background:#fff7ed;border:1.5px solid #d97706;border-radius:10px;padding:12px 20px;flex:1;min-width:150px;">
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">LOA Inquiry</div>
+      <div style="font-size:32px;font-weight:700;color:#1e2130;line-height:1;">105</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;">interactions &nbsp;·&nbsp; <span style="color:#059669;font-weight:600;">72% success</span></div>
+    </div>
+    <div style="background:#f0f9ff;border:1.5px solid #0891b2;border-radius:10px;padding:12px 20px;flex:1;min-width:150px;">
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Overall Success</div>
+      <div style="font-size:32px;font-weight:700;color:#059669;line-height:1;">72.6%</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;">703 of 968 cases · 11 API/system timeout</div>
+    </div>
+    <div style="background:#fef2f2;border:1.5px solid #dc2626;border-radius:10px;padding:12px 20px;flex:1;min-width:150px;">
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Unique Users</div>
+      <div style="font-size:32px;font-weight:700;color:#1e2130;line-height:1;">524</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;">across 507 sessions</div>
+    </div>
+  </div>
+
+  <!-- Row 1: Outcome donuts (4 use cases) -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+    <div class="chart-card">
+      <div class="chart-title">Policy Assistant — Outcomes</div>
+      <div class="chart-subtitle">365 cases · avg 7.0 turns · 218s avg</div>
+      <div class="chart-wrap"><canvas id="loaPaStatus"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">LOA Request Process — Outcomes</div>
+      <div class="chart-subtitle">305 cases · avg 3.6 turns · 83s avg</div>
+      <div class="chart-wrap"><canvas id="loaRnlaStatus"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">View LOA — Outcomes</div>
+      <div class="chart-subtitle">193 cases · avg 3.5 turns · 17s avg</div>
+      <div class="chart-wrap"><canvas id="loaVlStatus"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">LOA Inquiry — Outcomes</div>
+      <div class="chart-subtitle">105 cases · avg 7.3 turns · 126s avg</div>
+      <div class="chart-wrap"><canvas id="loaGlaiStatus"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 2: Entry types + Success comparison -->
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">How Users Entered Each Use Case</div>
+      <div class="chart-subtitle">Input text that launched each session</div>
+      <div class="chart-wrap"><canvas id="loaEntryTypes"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Outcome Comparison Across All 4 Use Cases</div>
+      <div class="chart-subtitle">Successful vs abandoned vs API/system timeout</div>
+      <div class="chart-wrap"><canvas id="loaSuccessComp"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Division & Store section -->
+  <div class="section-header" style="margin-top:8px;">
+    <div class="section-title" style="font-size:15px;">Division &amp; Store Analysis</div>
+    <div class="section-desc">Which divisions and stores are actively using LOA interactions</div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Interactions by UKG Division (Top 15)</div>
+      <div class="chart-subtitle">All 4 use cases per division</div>
+      <div class="chart-wrap tall"><canvas id="loaDivision"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Division Success Rate</div>
+      <div class="chart-subtitle">0060, 0615 &amp; Support Admin below 60% — predominantly Policy Assistant interactions</div>
+      <div class="chart-wrap tall"><canvas id="loaDivSucc"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-3">
+    <div class="chart-card">
+      <div class="chart-title">Cases by LOB</div>
+      <div class="chart-subtitle">RETAIL dominates LOA Request Process (272 of 305 cases)</div>
+      <div class="chart-wrap"><canvas id="loaLob"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">LOB Success Rate</div>
+      <div class="chart-subtitle">Retail leads at 90%; GO lowest at 49% (Policy Assistant heavy)</div>
+      <div class="chart-wrap"><canvas id="loaLobSucc"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Cases by Business Area</div>
+      <div class="chart-subtitle">Supermarket dominates LOA Request Process; Office heavy in Policy Assistant</div>
+      <div class="chart-wrap"><canvas id="loaBizArea"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Top Store Sites by Interaction Volume</div>
+      <div class="chart-subtitle">CO060 leads with 59 interactions; 00180 &amp; FN001 at 100% success</div>
+      <div class="chart-wrap"><canvas id="loaSites"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Outcome by UKG Area</div>
+      <div class="chart-subtitle">Retail 90% success; Non-Retail lower (45 abandoned, Policy Assistant heavy)</div>
+      <div class="chart-wrap"><canvas id="loaAreaStatus"></canvas></div>
+    </div>
+  </div>
+
+  <!-- User behaviour section -->
+  <div class="section-header" style="margin-top:8px;">
+    <div class="section-title" style="font-size:15px;">User Behaviour &amp; Engagement</div>
+    <div class="section-desc">Persona, manager status, device, and session patterns</div>
+  </div>
+
+  <div class="charts-row col-3">
+    <div class="chart-card">
+      <div class="chart-title">Cases by User Persona</div>
+      <div class="chart-subtitle">Hourly Associates lead LOA Request Process (225 of 305); Gen Associates drive Policy Assistant</div>
+      <div class="chart-wrap"><canvas id="loaPersona"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Persona Success Rate</div>
+      <div class="chart-subtitle">Store &amp; District Leadership at 100%; Gen Associates lowest at 50%</div>
+      <div class="chart-wrap"><canvas id="loaPersonaSucc"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Manager vs Non-Manager Outcomes</div>
+      <div class="chart-subtitle">Non-managers 82% success; managers 67% (handle more complex interactions)</div>
+      <div class="chart-wrap"><canvas id="loaManager"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row col-3">
+    <div class="chart-card">
+      <div class="chart-title">Session Turns Distribution</div>
+      <div class="chart-subtitle">View LOA peaks at 4 turns; Policy Assistant spans 7–13; RNLA typically 2–5</div>
+      <div class="chart-wrap"><canvas id="loaTurns"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Session Duration Buckets</div>
+      <div class="chart-subtitle">234 sessions under 30s (View LOA &amp; quick RNLA); 270 have no end time</div>
+      <div class="chart-wrap"><canvas id="loaDuration"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Device &amp; Browser</div>
+      <div class="chart-subtitle">Edge leads (237); iOS Safari 3rd — mobile use growing</div>
+      <div class="chart-wrap short"><canvas id="loaBrowser"></canvas></div>
+      <div style="margin-top:10px;"><canvas id="loaBrowserOs" style="max-height:90px;"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Insight callouts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:4px;">
+    <div class="info-note" style="flex-direction:column;gap:6px;">
+      <div style="font-weight:700;color:#1e2130;font-size:12px;">&#128196; LOA Request Process leads in success</div>
+      <div>LOA Request Process achieves <strong>94% success rate</strong> across 305 cases — the highest of all use cases. It's predominantly used by Hourly Associates in Retail (272 of 305 cases) and completes in just <strong>83 seconds</strong> on average.</div>
+    </div>
+    <div class="info-note" style="flex-direction:column;gap:6px;">
+      <div style="font-weight:700;color:#1e2130;font-size:12px;">&#128201; Policy Assistant drives GO &amp; Office</div>
+      <div>169 of 365 Policy Assistant cases come from the <strong>GO line of business</strong>, with 133 from Office/division 0060. Its 43% success rate reflects complex, multi-turn interactions averaging <strong>7.0 turns and 218 seconds</strong>.</div>
+    </div>
+    <div class="info-note" style="flex-direction:column;gap:6px;">
+      <div style="font-weight:700;color:#1e2130;font-size:12px;">&#128241; Multi-use-case sessions growing</div>
+      <div><strong>189 of 700 sessions</strong> (27%) used multiple use cases in the same conversation. This indicates users increasingly chain Policy Assistant → LOA Request Process workflows as confidence in the platform grows.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LOA = {"kpis": {"total": 968, "policy_assistant": 365, "rnla": 305, "view_loa": 193, "glai": 105, "overall_success": 703, "overall_success_pct": 72.6, "pa_success_pct": 43.3, "rnla_success_pct": 94.1, "vl_success_pct": 94.3, "glai_success_pct": 72.4, "unique_users": 524, "unique_sessions": 700, "avg_turns_pa": 7.0, "avg_turns_rnla": 3.6, "avg_turns_vl": 3.5, "avg_turns_glai": 7.3, "avg_dur_pa": 217.8, "avg_dur_rnla": 82.6, "avg_dur_vl": 16.9, "avg_dur_glai": 126.2}, "pa_status": {"labels": ["Successful", "Abandoned", "Out-of-Scope"], "values": [158, 178, 29]}, "rnla_status": {"labels": ["Successful", "Abandoned", "API/System Timeout"], "values": [287, 16, 2]}, "vl_status": {"labels": ["Successful", "Abandoned", "API/System Timeout"], "values": [182, 4, 7]}, "glai_status": {"labels": ["Successful", "Abandoned", "API/System Timeout"], "values": [76, 27, 2]}, "daily_volume": {"dates": ["2026-05-21", "2026-05-22", "2026-05-23", "2026-05-24", "2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-05-30", "2026-05-31", "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12", "2026-06-13", "2026-06-14", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19", "2026-06-20", "2026-06-21", "2026-06-22"], "series": {"Policy Assistant": [41, 37, 9, 12, 11, 29, 47, 11, 14, 7, 4, 13, 13, 10, 19, 10, 3, 4, 6, 9, 7, 4, 4, 1, 0, 7, 2, 3, 5, 8, 7, 6, 2], "LOA Request Process": [27, 25, 22, 12, 18, 23, 22, 22, 22, 16, 13, 10, 4, 4, 5, 4, 3, 5, 2, 4, 3, 2, 5, 2, 1, 7, 1, 0, 7, 3, 4, 5, 2], "View LOA": [21, 10, 6, 3, 5, 18, 12, 6, 8, 4, 2, 9, 9, 6, 10, 4, 2, 5, 5, 10, 6, 2, 3, 1, 2, 4, 0, 5, 8, 4, 2, 1, 0], "LOA Inquiry": [11, 6, 5, 1, 4, 12, 15, 2, 4, 7, 6, 2, 3, 1, 1, 1, 1, 0, 1, 2, 5, 1, 4, 0, 0, 2, 3, 0, 1, 1, 3, 0, 0]}}, "success_comp": {"labels": ["Policy Assistant", "LOA Request Process", "View LOA", "LOA Inquiry"], "successful": [158, 287, 182, 76], "abandoned": [178, 16, 4, 27], "escalated": [0, 2, 7, 2]}, "lob": {"labels": ["GO", "NON-RETAIL", "RETAIL"], "policy_assistant": [169, 31, 165], "rnla": [18, 15, 272], "view_loa": [56, 22, 115], "glai": [33, 12, 60]}, "lob_success": {"GO": {"total": 276, "success": 128, "pct": 46.4}, "NON-RETAIL": {"total": 80, "success": 54, "pct": 67.5}, "RETAIL": {"total": 612, "success": 521, "pct": 85.1}}, "division": {"labels": ["0060", "0615", "0701", "0011", "Support Admin", "0660", "0706", "0026", "0024", "0620", "0025", "0035", "0014", "0034", "0534"], "policy_assistant": [133, 91, 9, 7, 27, 6, 2, 4, 3, 5, 2, 2, 3, 5, 3], "rnla": [10, 13, 29, 23, 5, 14, 17, 17, 14, 15, 18, 11, 13, 9, 12], "view_loa": [48, 44, 17, 6, 6, 8, 4, 4, 3, 2, 3, 4, 4, 2, 1], "glai": [29, 13, 10, 8, 4, 2, 5, 1, 4, 2, 0, 4, 0, 1, 1], "success_pct": [48.2, 52.2, 98.5, 100.0, 35.7, 100.0, 100.0, 96.2, 100.0, 95.8, 100.0, 95.2, 100.0, 94.4, 100.0]}, "biz_area": {"labels": ["Logistics", "Manufacturing", "Office", "Supermarket"], "policy_assistant": [42, 14, 138, 165], "rnla": [15, 5, 10, 271], "view_loa": [20, 7, 50, 115], "glai": [11, 4, 29, 60], "success_pct": [55.7, 56.7, 47.6, 85.1]}, "persona": {"labels": ["1 - Hourly Associate", "2 - Human Resources", "3 - Store Leadership", "4 - District Leadership", "5 - General Associate", "6 - Dept Leader"], "policy_assistant": [129, 29, 13, 2, 176, 15], "rnla": [225, 11, 12, 3, 31, 22], "view_loa": [88, 15, 7, 1, 75, 7], "glai": [43, 4, 9, 2, 41, 6], "success_pct": [85.6, 59.3, 80.5, 75.0, 52.6, 86.0]}, "manager": {"Manager": {"total": 350, "success": 224, "abandoned": 103, "escalated": 10}, "Non-Manager": {"total": 609, "success": 473, "abandoned": 119, "escalated": 1}}, "browser": {"labels": ["Edge", "Chrome", "iOS Safari", "Firefox", "WebView", "Chrome iOS", "Samsung", "Safari"], "values": [315, 231, 203, 107, 84, 11, 9, 5]}, "browser_os": {"labels": ["Windows 10", "iOS", "Android OS", "Linux", "Mac OS", "Chrome OS"], "values": [424, 216, 156, 94, 76, 2]}, "session_multi": {"single_uc": 511, "multi_uc": 189}, "sites": {"labels": ["CO060", "MI060", "GR060", "FM060", "AT060", "00087", "RH060", "00054", "00094", "MB102", "DC087", "00085"], "values": [95, 32, 25, 22, 18, 17, 15, 13, 13, 12, 11, 10], "pa": [53, 19, 16, 11, 11, 12, 13, 6, 7, 6, 4, 7], "rnla": [4, 2, 1, 1, 2, 5, 0, 3, 1, 1, 1, 2], "vl": [26, 3, 8, 7, 2, 0, 1, 4, 4, 3, 6, 0], "glai": [12, 8, 0, 3, 3, 0, 1, 0, 1, 2, 0, 1], "succ_pct": [54.7, 62.5, 40.0, 40.9, 50.0, 52.9, 13.3, 61.5, 69.2, 58.3, 72.7, 10.0]}, "duration_buckets": {"labels": ["<30s", "30-60s", "1-2min", "2-5min", "5-10min", "10min+", "N/A"], "values": [329, 47, 64, 72, 45, 22, 389]}, "turns": {"labels": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"], "pa": [0, 0, 60, 8, 0, 0, 0, 38, 5, 23, 3, 24, 4, 13, 0], "rnla": [0, 1, 14, 19, 17, 12, 8, 9, 1, 1, 3, 0, 2, 2, 1], "vl": [0, 0, 53, 20, 108, 0, 2, 2, 1, 3, 0, 0, 0, 0, 0], "glai": [0, 1, 8, 21, 7, 11, 11, 4, 3, 4, 5, 3, 4, 5, 2]}, "area_status": {"labels": ["Retail", "Non-Retail", "Supply Chain/GO"], "successful": [521, 54, 128], "abandoned": [76, 25, 124], "escalated": [2, 0, 9]}, "entry_types": {"labels": ["Policy Assistant", "LOA Request Process", "View LOA", "LOA Inquiry"], "values": [365, 305, 193, 105]}};
+
+const LC = { blue:'#2563eb', green:'#059669', purple:'#7c3abf', red:'#dc2626', orange:'#d97706', teal:'#0891b2', yellow:'#ca8a04', amber:'#b45309', slate:'#64748b' };
+const SC  = ['#059669cc','#f59e0bcc','#dc2626cc'];
+const UCC = ['#2563ebcc','#7c3abfcc','#059669cc','#d97706cc'];
+const LPALE = [LC.blue,LC.green,LC.purple,LC.red,LC.orange,LC.teal,LC.yellow,LC.amber,LC.slate];
+
+function lGrid() { return { color:'rgba(200,210,230,0.7)', drawBorder:false }; }
+function lAx(title) {
+  return { grid:lGrid(), ticks:{color:'#6b7280'},
+    title: title ? {display:true,text:title,color:'#6b7280',font:{size:10}} : undefined };
+}
+
+// 1-4: Status donuts
+[['loaPaStatus',LOA.pa_status,365],['loaRnlaStatus',LOA.rnla_status,305],['loaVlStatus',LOA.vl_status,193],['loaGlaiStatus',LOA.glai_status,105]].forEach(([id,d,tot]) => {
+  new Chart(document.getElementById(id), {
+    type:'doughnut',
+    data:{ labels:d.labels, datasets:[{data:d.values, backgroundColor:['#059669','#f59e0b','#dc2626','#6b7280'], borderWidth:2, borderColor:'#fff', hoverOffset:5}] },
+    options:{ responsive:true, maintainAspectRatio:true, cutout:'65%',
+      plugins:{ legend:{position:'bottom',labels:{usePointStyle:true,padding:10}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} (${(ctx.raw/tot*100).toFixed(0)}%)`}} } }
+  });
+});
+
+// 5: Entry types
+new Chart(document.getElementById('loaEntryTypes'), {
+  type:'bar',
+  data:{ labels:LOA.entry_types.labels, datasets:[{data:LOA.entry_types.values, backgroundColor:LPALE, borderRadius:5}] },
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:false}},
+    scales:{ x:lAx(), y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 6: Success comparison
+new Chart(document.getElementById('loaSuccessComp'), {
+  type:'bar',
+  data:{ labels:LOA.success_comp.labels,
+    datasets:[
+      {label:'Successful', data:LOA.success_comp.successful, backgroundColor:'#059669cc', borderRadius:4},
+      {label:'Abandoned',  data:LOA.success_comp.abandoned,  backgroundColor:'#f59e0bcc', borderRadius:4},
+      {label:'API/System Timeout',  data:LOA.success_comp.escalated,  backgroundColor:'#7c3abfcc', borderRadius:4}
+    ] },
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true}}},
+    scales:{ x:lAx(), y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 7: Division grouped
+new Chart(document.getElementById('loaDivision'), {
+  type:'bar',
+  data:{ labels:LOA.division.labels, datasets:[
+    {label:'Policy Assistant',   data:LOA.division.policy_assistant, backgroundColor:LC.blue+'cc',   borderRadius:3},
+    {label:'LOA Request Process',    data:LOA.division.rnla,             backgroundColor:LC.purple+'cc', borderRadius:3},
+    {label:'View LOA',           data:LOA.division.view_loa,         backgroundColor:LC.green+'cc',  borderRadius:3},
+    {label:'LOA Inquiry',        data:LOA.division.glai,             backgroundColor:LC.orange+'cc', borderRadius:3}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'top',labels:{usePointStyle:true,font:{size:10}}},
+      datalabels:{
+        display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+        anchor:'end', align:'end',
+        color:'#374151', font:{size:8, weight:'700'},
+        formatter: v => v
+      }
+    },
+    scales:{ x:lAx('Division'), y:{...lAx('Interactions'),beginAtZero:true} } }
+});
+
+// 8: Division success
+new Chart(document.getElementById('loaDivSucc'), {
+  type:'bar',
+  data:{ labels:LOA.division.labels, datasets:[{
+    label:'Success %', data:LOA.division.success_pct,
+    backgroundColor:LOA.division.success_pct.map(v=>v>=100?'#059669cc':v>=60?'#2563ebcc':v>0?'#f59e0bcc':'#dc2626cc'),
+    borderRadius:4
+  }]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw}% success`}}},
+    scales:{ x:lAx('Division'), y:{...lAx('%'),beginAtZero:true,max:110} } }
+});
+
+// 9: LOB grouped
+new Chart(document.getElementById('loaLob'), {
+  type:'bar',
+  data:{ labels:LOA.lob.labels, datasets:[
+    {label:'Policy Assistant', data:LOA.lob.policy_assistant, backgroundColor:LC.blue+'cc',   borderRadius:4},
+    {label:'LOA Request Process',  data:LOA.lob.rnla,             backgroundColor:LC.purple+'cc', borderRadius:4},
+    {label:'View LOA',         data:LOA.lob.view_loa,         backgroundColor:LC.green+'cc',  borderRadius:4},
+    {label:'LOA Inquiry',      data:LOA.lob.glai,             backgroundColor:LC.orange+'cc', borderRadius:4}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:10}}}},
+    scales:{ x:lAx(), y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 10: LOB success
+const lobKeys = Object.keys(LOA.lob_success);
+new Chart(document.getElementById('loaLobSucc'), {
+  type:'bar',
+  data:{ labels:lobKeys, datasets:[{
+    label:'Success %', data:lobKeys.map(k=>LOA.lob_success[k].pct),
+    backgroundColor:lobKeys.map(k=>LOA.lob_success[k].pct>=80?'#059669cc':LOA.lob_success[k].pct>=60?'#2563ebcc':'#dc2626cc'),
+    borderRadius:4
+  }]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw}% (${LOA.lob_success[lobKeys[ctx.dataIndex]].success}/${LOA.lob_success[lobKeys[ctx.dataIndex]].total})`}}},
+    scales:{ x:lAx(), y:{...lAx('%'),beginAtZero:true,max:100} } }
+});
+
+// 11: Business area grouped
+new Chart(document.getElementById('loaBizArea'), {
+  type:'bar',
+  data:{ labels:LOA.biz_area.labels, datasets:[
+    {label:'Policy Assistant', data:LOA.biz_area.policy_assistant, backgroundColor:LC.blue+'cc',   borderRadius:4},
+    {label:'LOA Request Process',  data:LOA.biz_area.rnla,             backgroundColor:LC.purple+'cc', borderRadius:4},
+    {label:'View LOA',         data:LOA.biz_area.view_loa,         backgroundColor:LC.green+'cc',  borderRadius:4},
+    {label:'LOA Inquiry',      data:LOA.biz_area.glai,             backgroundColor:LC.orange+'cc', borderRadius:4}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:10}}}},
+    scales:{ x:lAx(), y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 12: Top sites
+new Chart(document.getElementById('loaSites'), {
+  type:'bar',
+  data:{ labels:LOA.sites.labels, datasets:[
+    {label:'Policy Assistant', data:LOA.sites.pa,   backgroundColor:LC.blue+'cc',   borderRadius:3},
+    {label:'LOA Request Process',  data:LOA.sites.rnla, backgroundColor:LC.purple+'cc', borderRadius:3},
+    {label:'View LOA',         data:LOA.sites.vl,   backgroundColor:LC.green+'cc',  borderRadius:3},
+    {label:'LOA Inquiry',      data:LOA.sites.glai, backgroundColor:LC.orange+'cc', borderRadius:3}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{
+      legend:{position:'top',labels:{usePointStyle:true}},
+      tooltip:{callbacks:{afterLabel:ctx=>` Site success: ${LOA.sites.succ_pct[ctx.dataIndex]}%`}},
+      datalabels:{
+        display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+        anchor:'end', align:'end',
+        color:'#374151', font:{size:8, weight:'700'},
+        formatter: v => v
+      }
+    },
+    scales:{ x:lAx('Site'), y:{...lAx('Interactions'),beginAtZero:true} } }
+});
+
+// 13: Area stacked
+new Chart(document.getElementById('loaAreaStatus'), {
+  type:'bar',
+  data:{ labels:LOA.area_status.labels, datasets:[
+    {label:'Successful', data:LOA.area_status.successful, backgroundColor:'#059669cc', stack:'a', borderRadius:2},
+    {label:'Abandoned',  data:LOA.area_status.abandoned,  backgroundColor:'#f59e0bcc', stack:'a', borderRadius:2},
+    {label:'API/System Timeout',  data:LOA.area_status.escalated,  backgroundColor:'#7c3abfcc', stack:'a', borderRadius:2}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true}}},
+    scales:{ x:lAx(), y:{...lAx('Cases'),stacked:true,beginAtZero:true} } }
+});
+
+// 14: Persona grouped
+new Chart(document.getElementById('loaPersona'), {
+  type:'bar',
+  data:{ labels:LOA.persona.labels.map(l=>l.replace(/^\d+ - /,'')), datasets:[
+    {label:'Policy Assistant', data:LOA.persona.policy_assistant, backgroundColor:LC.blue+'cc',   borderRadius:4},
+    {label:'LOA Request Process',  data:LOA.persona.rnla,             backgroundColor:LC.purple+'cc', borderRadius:4},
+    {label:'View LOA',         data:LOA.persona.view_loa,         backgroundColor:LC.green+'cc',  borderRadius:4},
+    {label:'LOA Inquiry',      data:LOA.persona.glai,             backgroundColor:LC.orange+'cc', borderRadius:4}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:10}}}},
+    scales:{ x:{...lAx(),ticks:{color:'#6b7280',font:{size:9}}}, y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 15: Persona success
+new Chart(document.getElementById('loaPersonaSucc'), {
+  type:'bar',
+  data:{ labels:LOA.persona.labels.map(l=>l.replace(/^\d+ - /,'')), datasets:[{
+    label:'Success %', data:LOA.persona.success_pct,
+    backgroundColor:LOA.persona.success_pct.map(v=>v>=90?'#059669cc':v>=70?'#2563ebcc':'#f59e0bcc'),
+    borderRadius:4
+  }]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:false}},
+    scales:{ x:{...lAx(),ticks:{color:'#6b7280',font:{size:9}}}, y:{...lAx('%'),beginAtZero:true,max:110} } }
+});
+
+// 16: Manager stacked
+const mgrKeys = Object.keys(LOA.manager);
+new Chart(document.getElementById('loaManager'), {
+  type:'bar',
+  data:{ labels:mgrKeys, datasets:[
+    {label:'Successful', data:mgrKeys.map(k=>LOA.manager[k].success),   backgroundColor:'#059669cc', borderRadius:2},
+    {label:'Abandoned',  data:mgrKeys.map(k=>LOA.manager[k].abandoned), backgroundColor:'#f59e0bcc', borderRadius:2},
+    {label:'API/System Timeout',  data:mgrKeys.map(k=>LOA.manager[k].escalated), backgroundColor:'#7c3abfcc', borderRadius:2}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:10}}}},
+    scales:{ x:lAx(), y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 17: Turns distribution
+new Chart(document.getElementById('loaTurns'), {
+  type:'bar',
+  data:{ labels:LOA.turns.labels, datasets:[
+    {label:'Policy Assistant', data:LOA.turns.pa,   backgroundColor:LC.blue+'cc',   borderRadius:3},
+    {label:'LOA Request Process',  data:LOA.turns.rnla, backgroundColor:LC.purple+'cc', borderRadius:3},
+    {label:'View LOA',         data:LOA.turns.vl,   backgroundColor:LC.green+'cc',  borderRadius:3},
+    {label:'LOA Inquiry',      data:LOA.turns.glai, backgroundColor:LC.orange+'cc', borderRadius:3}
+  ]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:10}}}},
+    scales:{ x:lAx('Turns'), y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 18: Duration buckets
+new Chart(document.getElementById('loaDuration'), {
+  type:'bar',
+  data:{ labels:LOA.duration_buckets.labels, datasets:[{
+    label:'Cases', data:LOA.duration_buckets.values,
+    backgroundColor:['#059669cc','#2563ebcc','#7c3abfcc','#d97706cc','#f59e0bcc','#dc2626cc','#94a3b8cc'],
+    borderRadius:4
+  }]},
+  options:{ responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:false}},
+    scales:{ x:lAx(), y:{...lAx('Cases'),beginAtZero:true} } }
+});
+
+// 19: Browser bar
+new Chart(document.getElementById('loaBrowser'), {
+  type:'bar',
+  data:{ labels:LOA.browser.labels, datasets:[{data:LOA.browser.values, backgroundColor:LPALE, borderRadius:4}] },
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:false}},
+    scales:{ x:{...lAx(),beginAtZero:true}, y:lAx() } }
+});
+
+// 20: OS donut
+new Chart(document.getElementById('loaBrowserOs'), {
+  type:'doughnut',
+  data:{ labels:LOA.browser_os.labels, datasets:[{data:LOA.browser_os.values, backgroundColor:LPALE, borderWidth:2, borderColor:'#fff'}] },
+  options:{ responsive:true, maintainAspectRatio:true, cutout:'50%',
+    plugins:{legend:{position:'right',labels:{font:{size:9},padding:4,usePointStyle:true}}} }
+});
+</script>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: SMS NOTIFICATIONS
+══════════════════════════════════════════════ -->
+<div class="page" id="page-sms">
+  <div class="section-header">
+    <div class="section-title">Associate Notification SMS — Daily Trend</div>
+    <div class="section-desc">Mar 19 – May 21, 2026 &nbsp;·&nbsp; 57 active days &nbsp;·&nbsp; Daily count of associate notification SMS sent</div>
+  </div>
+
+  <!-- KPI pills -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:20px;">
+    <div class="kpi-card" style="--kpi-color:#2563eb">
+      <div class="kpi-label">Total SMS</div>
+      <div class="kpi-value">172</div>
+      <div class="kpi-sub">57 active days</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#059669">
+      <div class="kpi-label">Daily Average</div>
+      <div class="kpi-value">3.0</div>
+      <div class="kpi-sub">SMS per day</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#dc2626">
+      <div class="kpi-label">Peak Day</div>
+      <div class="kpi-value">8</div>
+      <div class="kpi-sub">5-May 2026</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#7c3abf">
+      <div class="kpi-label">March Total</div>
+      <div class="kpi-value">23</div>
+      <div class="kpi-sub">10 days · 2.3 avg</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#d97706">
+      <div class="kpi-label">April Total</div>
+      <div class="kpi-value">86</div>
+      <div class="kpi-sub">28 days · 3.1 avg</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#0891b2">
+      <div class="kpi-label">May Total (to 21st)</div>
+      <div class="kpi-value">63</div>
+      <div class="kpi-sub">19 days · 3.3 avg</div>
+    </div>
+  </div>
+
+  <!-- Main daily bar + rolling avg -->
+  <div class="chart-card" style="margin-bottom:20px;">
+    <div class="chart-title">
+      Daily Associate Notification SMS
+      <span style="display:inline-flex;align-items:center;gap:8px;font-weight:400;font-size:11px;color:#6b7280;margin-left:8px;">
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:28px;height:3px;background:#dc2626;border-radius:2px;"></span>7-day rolling avg</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb99;"></span>March</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#d9770699;"></span>April</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#05966999;"></span>May</span>
+      </span>
+    </div>
+    <div class="chart-subtitle">Hover for exact count + 7-day average · bars colour-coded by month</div>
+    <div style="position:relative;height:320px;"><canvas id="smsDailyBar"></canvas></div>
+  </div>
+
+  <!-- Weekly + Monthly -->
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">Weekly SMS Totals</div>
+      <div class="chart-subtitle">Aggregated by calendar week (week-ending Sunday)</div>
+      <div class="chart-wrap tall"><canvas id="smsWeekly"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Monthly SMS Volume</div>
+      <div class="chart-subtitle">March → April shows 3.7× growth; May trending higher per day</div>
+      <div class="chart-wrap"><canvas id="smsMonthly"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Day-of-week + Distribution -->
+  <div class="charts-row col-2">
+    <div class="chart-card">
+      <div class="chart-title">SMS Volume by Day of Week</div>
+      <div class="chart-subtitle">Total (bars) and daily average (red line) — dual axis</div>
+      <div class="chart-wrap"><canvas id="smsDow"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Daily Count Frequency Distribution</div>
+      <div class="chart-subtitle">How often each SMS count value occurred across all 57 days</div>
+      <div class="chart-wrap"><canvas id="smsDist"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Insight callouts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:4px;">
+    <div class="info-note" style="flex-direction:column;gap:5px;">
+      <div style="font-weight:700;color:#1e2130;font-size:12px;">&#128200; Growing trend month-over-month</div>
+      <div>Daily average rose from <strong>2.3 (March)</strong> → <strong>3.1 (April)</strong> → <strong>3.3 (May)</strong>. April's volume was 3.7× March, driven by wider associate adoption and more LOA cases being triggered.</div>
+    </div>
+    <div class="info-note" style="flex-direction:column;gap:5px;">
+      <div style="font-weight:700;color:#1e2130;font-size:12px;">&#9889; 5-May spike: 8 SMS in one day</div>
+      <div>The <strong>single highest day</strong> is 5-May (8 SMS). May also had strong late-month days: <strong>18-May (7), 17-May (5), 20-May (5)</strong>. All surges align with periods of high LOA activity in the RAG log.</div>
+    </div>
+    <div class="info-note" style="flex-direction:column;gap:5px;">
+      <div style="font-weight:700;color:#1e2130;font-size:12px;">&#128197; Tuesday &amp; Thursday lead by day</div>
+      <div>Tuesday and Thursday accumulate the most SMS volume across the dataset. Weekend activity (Sat/Sun) is <strong>near zero</strong>, confirming this is a <strong>workday-only</strong> workflow driven by HR and manager activity.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SMS Data ─────────────────────────────────────────────────
+const SMS_RAW = [
+  {d:'19-Mar',v:1},{d:'20-Mar',v:4},{d:'21-Mar',v:3},{d:'22-Mar',v:3},
+  {d:'24-Mar',v:3},{d:'26-Mar',v:1},{d:'27-Mar',v:3},{d:'28-Mar',v:2},
+  {d:'30-Mar',v:2},{d:'31-Mar',v:1},
+  {d:'1-Apr',v:1},{d:'2-Apr',v:3},{d:'3-Apr',v:5},{d:'4-Apr',v:1},
+  {d:'5-Apr',v:3},{d:'6-Apr',v:1},{d:'7-Apr',v:2},{d:'8-Apr',v:3},
+  {d:'9-Apr',v:1},{d:'10-Apr',v:1},{d:'11-Apr',v:2},{d:'12-Apr',v:4},
+  {d:'13-Apr',v:2},{d:'15-Apr',v:2},{d:'16-Apr',v:1},{d:'17-Apr',v:5},
+  {d:'18-Apr',v:5},{d:'19-Apr',v:3},{d:'20-Apr',v:1},{d:'21-Apr',v:4},
+  {d:'22-Apr',v:2},{d:'24-Apr',v:2},{d:'25-Apr',v:3},{d:'26-Apr',v:4},
+  {d:'27-Apr',v:5},{d:'28-Apr',v:3},{d:'29-Apr',v:4},{d:'30-Apr',v:3},
+  {d:'1-May',v:3},{d:'2-May',v:1},{d:'3-May',v:3},{d:'4-May',v:2},
+  {d:'5-May',v:8},{d:'6-May',v:1},{d:'7-May',v:1},{d:'8-May',v:3},
+  {d:'10-May',v:1},{d:'11-May',v:2},{d:'12-May',v:3},{d:'13-May',v:2},
+  {d:'14-May',v:2},{d:'15-May',v:4},{d:'16-May',v:5},{d:'17-May',v:5},
+  {d:'18-May',v:7},{d:'19-May',v:4},{d:'20-May',v:5},{d:'21-May',v:1}
+];
+
+const smsLabels = SMS_RAW.map(r => r.d);
+const smsVals   = SMS_RAW.map(r => r.v);
+
+const monthColorBg = smsLabels.map(l =>
+  l.includes('Mar') ? 'rgba(37,99,235,0.6)' :
+  l.includes('Apr') ? 'rgba(217,119,6,0.6)' : 'rgba(5,150,105,0.6)');
+const monthColorBorder = smsLabels.map(l =>
+  l.includes('Mar') ? '#2563eb' :
+  l.includes('Apr') ? '#d97706' : '#059669');
+
+function rollingAvg(arr, w) {
+  return arr.map((_, i) => {
+    const half = Math.floor(w / 2);
+    const s = Math.max(0, i - half), e = Math.min(arr.length, s + w);
+    const sl = arr.slice(s, e);
+    return parseFloat((sl.reduce((a,b)=>a+b,0)/sl.length).toFixed(2));
+  });
+}
+const rolling7 = rollingAvg(smsVals, 7);
+
+// 1. Daily bar + rolling line
+new Chart(document.getElementById('smsDailyBar'), {
+  type: 'bar',
+  data: {
+    labels: smsLabels,
+    datasets: [
+      { type:'bar',  label:'Daily SMS',        data: smsVals,   backgroundColor: monthColorBg, borderColor: monthColorBorder, borderWidth:1, borderRadius:3, order:2 },
+      { type:'line', label:'7-Day Rolling Avg', data: rolling7, borderColor:'#dc2626', borderWidth:2.5, pointRadius:0, pointHoverRadius:4, fill:false, tension:0.45, order:1 }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{
+      legend:{ display:false },
+      tooltip:{ callbacks:{
+        title: ctx => ctx[0].label,
+        label: ctx => ctx.dataset.label.includes('Avg') ? ` 7-day avg: ${ctx.raw}` : ` SMS sent: ${ctx.raw}`
+      }}
+    },
+    scales:{
+      x:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280',maxRotation:55,font:{size:10}} },
+      y:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280',stepSize:1}, beginAtZero:true, max:10,
+          title:{display:true,text:'SMS Count',color:'#6b7280',font:{size:10}} }
+    }
+  }
+});
+
+// 2. Weekly totals
+function getWeekLabel(label) {
+  const [day, mon] = label.split('-');
+  const mIdx = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5}[mon];
+  const d = new Date(2026, mIdx, parseInt(day));
+  const sun = new Date(d); sun.setDate(d.getDate() + (7 - d.getDay()) % 7);
+  const mNames = ['Jan','Feb','Mar','Apr','May','Jun'];
+  return `${sun.getDate()}-${mNames[sun.getMonth()]}`;
+}
+const weekMap = {};
+SMS_RAW.forEach(r => { const w = getWeekLabel(r.d); weekMap[w] = (weekMap[w]||0) + r.v; });
+const wkLabels = Object.keys(weekMap), wkVals = Object.values(weekMap);
+const wkColors = wkLabels.map(l => l.includes('Mar')?'rgba(37,99,235,.65)':l.includes('Apr')?'rgba(217,119,6,.65)':'rgba(5,150,105,.65)');
+
+new Chart(document.getElementById('smsWeekly'), {
+  type:'bar',
+  data:{ labels:wkLabels, datasets:[{ label:'Weekly SMS', data:wkVals, backgroundColor:wkColors, borderRadius:5 }] },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.raw} SMS`}} },
+    scales:{
+      x:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280',maxRotation:45,font:{size:10}} },
+      y:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280',stepSize:2}, beginAtZero:true,
+          title:{display:true,text:'Total SMS',color:'#6b7280',font:{size:10}} }
+    }
+  }
+});
+
+// 3. Monthly totals
+new Chart(document.getElementById('smsMonthly'), {
+  type:'bar',
+  data:{
+    labels:['March\n(10 days)','April\n(28 days)','May 1–21\n(19 days)'],
+    datasets:[{
+      label:'Total SMS', data:[23,86,63],
+      backgroundColor:['rgba(37,99,235,.7)','rgba(217,119,6,.7)','rgba(5,150,105,.7)'],
+      borderRadius:6
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{afterLabel:ctx=>`Daily avg: ${[2.3,3.1,3.3][ctx.dataIndex]}  ·  ${['10','28','19'][ctx.dataIndex]} days`}}
+    },
+    scales:{
+      x:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280'} },
+      y:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280'}, beginAtZero:true,
+          title:{display:true,text:'Total SMS',color:'#6b7280',font:{size:10}} }
+    }
+  }
+});
+
+// 4. Day-of-week (dual axis)
+function getDOW(label) {
+  const [day,mon] = label.split('-');
+  return new Date(2026,{Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5}[mon],parseInt(day)).getDay();
+}
+const dowNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const dowTot=[0,0,0,0,0,0,0], dowCnt=[0,0,0,0,0,0,0];
+SMS_RAW.forEach(r=>{ const d=getDOW(r.d); dowTot[d]+=r.v; dowCnt[d]++; });
+const dowAvg=dowTot.map((t,i)=>dowCnt[i]>0?parseFloat((t/dowCnt[i]).toFixed(2)):0);
+
+new Chart(document.getElementById('smsDow'), {
+  type:'bar',
+  data:{
+    labels:dowNames,
+    datasets:[
+      { type:'bar',  label:'Total SMS',  data:dowTot, backgroundColor:'rgba(37,99,235,.6)', borderRadius:4, yAxisID:'y'  },
+      { type:'line', label:'Daily Avg',  data:dowAvg, borderColor:'#dc2626', borderWidth:2.2, pointRadius:5,
+        pointBackgroundColor:'#dc2626', fill:false, tension:0.3, yAxisID:'y2' }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    interaction:{mode:'index',intersect:false},
+    plugins:{ legend:{position:'top',labels:{usePointStyle:true,font:{size:10}}} },
+    scales:{
+      x:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280'} },
+      y:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#2563eb'}, beginAtZero:true,
+          title:{display:true,text:'Total SMS',color:'#2563eb',font:{size:10}} },
+      y2:{ position:'right', grid:{drawOnChartArea:false}, ticks:{color:'#dc2626'}, beginAtZero:true,
+           title:{display:true,text:'Avg / Day',color:'#dc2626',font:{size:10}} }
+    }
+  }
+});
+
+// 5. Distribution histogram
+const distBuckets={};
+smsVals.forEach(v=>{ distBuckets[v]=(distBuckets[v]||0)+1; });
+const distKeys=[1,2,3,4,5,6,7,8];
+const distVals=distKeys.map(k=>distBuckets[k]||0);
+
+new Chart(document.getElementById('smsDist'), {
+  type:'bar',
+  data:{
+    labels:distKeys.map(k=>`${k} SMS`),
+    datasets:[{
+      label:'Days',
+      data:distVals,
+      backgroundColor:distKeys.map(k=>k<=2?'rgba(37,99,235,.65)':k<=4?'rgba(5,150,105,.65)':k<=6?'rgba(217,119,6,.65)':'rgba(220,38,38,.65)'),
+      borderRadius:4
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>`${ctx.raw} day${ctx.raw!==1?'s':''} recorded ${distKeys[ctx.dataIndex]} SMS`}}
+    },
+    scales:{
+      x:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280'} },
+      y:{ grid:{color:'rgba(200,210,230,.5)',drawBorder:false}, ticks:{color:'#6b7280',stepSize:1}, beginAtZero:true,
+          title:{display:true,text:'Number of Days',color:'#6b7280',font:{size:10}} }
+    }
+  }
+});
+</script>
+</body>
+</html>
+</html>
