@@ -1,1 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HVA Watson 4-Week Report V2</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.6;background:#f0f2f5;color:#1f2328}
+.page{max-width:880px;margin:0 auto;padding:28px 18px 60px}
+.hdr{background:linear-gradient(135deg,#1f2328 70%,#2e3a4a 100%);color:#fff;border-radius:12px;padding:26px 28px 22px;margin-bottom:14px;position:relative;overflow:hidden}
+.hdr::after{content:'HVA';position:absolute;right:-10px;top:-20px;font-size:120px;font-weight:900;opacity:.04;color:#fff;pointer-events:none}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
+.hdr-title{font-size:21px;font-weight:800;letter-spacing:-.4px}
+.hdr-sub{font-size:12px;opacity:.55;margin-top:3px}
+.hdr-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#fff}
+.pill-green{background:rgba(26,122,58,.35);border-color:rgba(26,122,58,.5)}
+.pill-red{background:rgba(192,57,43,.35);border-color:rgba(192,57,43,.5)}
+.pill-amber{background:rgba(183,119,13,.4);border-color:rgba(183,119,13,.6)}
+.hdr-meta{text-align:right;font-size:12px;opacity:.6;flex-shrink:0}
+.hdr-meta strong{font-size:14px;opacity:1;display:block;color:#fff}
+.filter-bar{background:#fffbea;border:1px solid #fcd34d;border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:12px;color:#92400e;display:flex;gap:8px;align-items:flex-start}
+.filter-bar strong{white-space:nowrap}
+.card{background:#fff;border-radius:10px;padding:20px 22px;margin-bottom:14px;border:1px solid #e5e7eb}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#57606a;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title span{width:3px;height:13px;background:#3b82d4;border-radius:2px;display:inline-block;flex-shrink:0}
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.kpi-dial{background:#f7f8fa;border:1px solid #e5e7eb;border-radius:10px;padding:14px 10px;text-align:center}
+.kdi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#57606a;margin-bottom:6px}
+.kdi-svg{width:72px;height:72px;margin:0 auto 6px}
+.kdi-value{font-size:18px;font-weight:800;line-height:1}
+.kdi-sub{font-size:10px;color:#57606a;margin-top:2px}
+.kdi-delta{font-size:10px;font-weight:700;margin-top:5px;padding:2px 7px;border-radius:10px;display:inline-block}
+.dd{background:#fde8e8;color:#c0392b}.du{background:#e6f4ea;color:#1a7a3a}.dn{background:#f0f0f0;color:#57606a}
+/* 4-week period KPI row */
+.period-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.pkpi{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;text-align:center}
+.pkpi-val{font-size:24px;font-weight:800;line-height:1.1}
+.pkpi-lbl{font-size:11px;color:#57606a;margin-top:3px}
+.pkpi-sub{font-size:10px;color:#57606a;margin-top:2px}
+/* weekly cards */
+.wk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.wk-card{border-radius:9px;padding:14px 12px;border:1px solid #e5e7eb;background:#f7f8fa}
+.wk-card.current{background:#eff6ff;border-color:#93c5fd;border-width:2px}
+.wk-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#57606a;margin-bottom:2px}
+.wk-label.cur{color:#3b82d4}
+.wk-dates{font-size:9px;color:#57606a;margin-bottom:7px}
+.wk-vol{font-size:15px;font-weight:800;color:#1f2328}
+.wk-sub{font-size:10px;color:#57606a;margin-bottom:7px}
+.metric-row{margin-bottom:5px}
+.metric-label{font-size:10px;color:#57606a;margin-bottom:2px}
+.metric-bar{background:#e5e7eb;border-radius:3px;height:8px;width:100%;position:relative}
+.bar-inner{height:8px;border-radius:3px;position:absolute;left:0;top:0}
+.metric-val{font-size:11px;font-weight:700;margin-top:1px}
+/* decomp */
+.decomp-root{background:#1f2328;color:#fff;border-radius:8px;padding:13px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.branch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.bnode{border-radius:8px;padding:11px 10px;border:1px solid}
+.bn-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.bn-vol{font-size:17px;font-weight:800}
+.bn-pct{font-size:11px;font-weight:600;margin-top:1px}
+.bn-aht{font-size:10px;color:#57606a;margin-top:3px}
+.bn-divider{border-top:1px solid;margin:6px 0 4px;opacity:.3}
+.bn-items{font-size:10px}
+.bn-row{display:flex;justify-content:space-between;padding:1px 0;color:#57606a}
+.bn-row strong{color:#1f2328;font-weight:700}
+.bn-contained{background:#eefbf3;border-color:#74d4a0}
+.bn-xfer{background:#fff5f5;border-color:#f5b8b8}
+.bn-drop{background:#f7f8fa;border-color:#d1d5db}
+.bn-early{background:#f5f3ff;border-color:#c3bdf5}
+.bn-oos{background:#fffbea;border-color:#fcd34d}
+/* pie */
+.pie-wrap{display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.pie-legend{flex:1;min-width:180px}
+.pie-leg-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:12px}
+.pie-leg-dot{width:11px;height:11px;border-radius:2px;flex-shrink:0}
+.pie-leg-lbl{flex:1;color:#1f2328}
+.pie-leg-val{font-weight:700;color:#57606a;white-space:nowrap}
+/* chart legend */
+.chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px}
+.cl-item{display:flex;align-items:center;gap:5px}
+.cl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+/* use-case table */
+.uc-table{width:100%;border-collapse:collapse;font-size:12px}
+.uc-table th{background:#f7f8fa;text-align:left;padding:6px 8px;font-size:10px;font-weight:700;color:#57606a;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e5e7eb}
+.uc-table td{padding:6px 8px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+.uc-table tr:last-child td{border-bottom:none}
+.uc-table tr:hover td{background:#f7f8fa}
+.cat-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.cat-s{background:#dbeafe;color:#1e40af}.cat-m{background:#dcfce7;color:#166534}
+.cat-c{background:#fef3c7;color:#92400e}.cat-st{background:#f3e8ff;color:#6b21a8}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.mini-bar-bg{background:#e5e7eb;border-radius:3px;height:8px;width:80px;display:inline-block;vertical-align:middle;position:relative}
+.mini-bar-fill{height:8px;border-radius:3px;position:absolute;left:0;top:0}
+.trend-chip{font-size:11px;font-weight:700;text-align:center}
+.tc-up{color:#1a7a3a}.tc-dn{color:#c0392b}.tc-fl{color:#57606a}
+.highlight-row td{background:#eff6ff}
+/* DOW */
+.dow-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow-tile{border-radius:8px;padding:10px 6px;text-align:center;border:1px solid transparent}
+.dt-day{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.dt-vol{font-size:11px;color:#57606a}
+.dt-contain{font-size:14px;font-weight:800;margin-top:3px}
+.dt-sched,.dt-xfer{font-size:10px;margin-top:1px}
+.dt-xfer{font-weight:600}
+.dt-aht{font-size:10px;color:#57606a;margin-top:3px}
+/* xfer bars */
+.xfer-bars{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.xb-title{font-size:10px;font-weight:700;color:#57606a;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.xb-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.xb-label{font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xb-bar-bg{width:110px;background:#f0f0f0;border-radius:3px;height:9px;flex-shrink:0;position:relative}
+.xb-bar-fill{height:9px;border-radius:3px;position:absolute;left:0;top:0;background:#f5b8b8}
+.xb-val{font-size:11px;font-weight:700;color:#c0392b;width:34px;text-align:right;flex-shrink:0}
+.chart-wrap{overflow-x:auto}
+.rpt-footer{text-align:center;font-size:11px;color:#57606a;padding-top:14px;border-top:1px solid #e5e7eb;margin-top:6px}
+/* ── Print / Save PDF button ── */
+.print-bar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e5e7eb;
+            padding:8px 18px;display:flex;align-items:center;gap:10px;margin-bottom:0}
+.print-btn{display:inline-flex;align-items:center;gap:6px;background:#1f2328;color:#fff;
+            border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;
+            cursor:pointer;letter-spacing:.02em;font-family:inherit}
+.print-btn:hover{background:#3b82d4}
+.print-btn svg{flex-shrink:0}
+.print-hint{font-size:11px;color:#9ca3af}
+@media print{
+  .print-bar{display:none!important}
+  body{background:#fff!important}
+  .page{padding:10px 6px!important}
+}
+@media(max-width:620px){
+  .kpi-strip,.period-kpi{grid-template-columns:repeat(2,1fr)}
+  .wk-grid{grid-template-columns:repeat(2,1fr)}
+  .branch-grid{grid-template-columns:repeat(2,1fr)}
+  .dow-strip{grid-template-columns:repeat(4,1fr)}
+  .xfer-bars{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="print-bar">
+  <button class="print-btn" onclick="window.print()">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 6V1h8v5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="1" y="6" width="14" height="7" rx="1.5" stroke="#fff" stroke-width="1.5"/>
+      <path d="M4 10h8M4 13h8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+      <circle cx="3.5" cy="9" r="0.8" fill="#fff"/>
+    </svg>
+    Print / Save as PDF
+  </button>
+  <span class="print-hint">Use your browser's print dialog &rarr; "Save as PDF" to export</span>
+</div>
+<div class="page">
 
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="hdr-title">HVA Watson Performance Report</div>
+      <div class="hdr-sub">Healthcare Virtual Assistant · cva.call_details + hva_watson_mapping · 4 Weeks Sun-Sat</div>
+      <div class="hdr-pills" style="margin-top:10px">
+        <span class="pill">16,777 Total Calls (4 wks)</span>
+        <span class="pill pill-green">Contain: 40.4%</span>
+        <span class="pill">W1 = Most Recent</span>
+        <span class="pill pill-red">W1 Contain: 42.0%</span>
+      </div>
+    </div>
+    <div class="hdr-meta">
+      <strong>Jun 21, 2026 - Jul 18, 2026</strong>
+      <div>Generated Jul 21, 2026</div>
+      <div>4 complete Sun-Sat weeks</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTAINMENT BREAKDOWN BAR -->
+<div style="background:#f7f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:7px 14px;margin-bottom:14px;font-size:11px;color:#57606a;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+  <strong style="color:#1f2328;white-space:nowrap">Containment 40.4% =</strong>
+  <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#1a7a3a;border-radius:2px;display:inline-block"></span><span style="color:#1a7a3a;font-weight:600">Watson Scheduled: 2,463 (14.7%)</span></span>
+  <span style="color:#d1d5db">+</span>
+  <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#3b82d4;border-radius:2px;display:inline-block"></span><span style="color:#1e40af;font-weight:600">Successfully Handled: 4,312 (25.7%)</span></span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:4px;flex-shrink:0">
+    <div style="width:120px;background:#e5e7eb;border-radius:3px;height:6px;position:relative;overflow:hidden;display:inline-block;vertical-align:middle">
+      <div style="position:absolute;left:0;top:0;height:6px;width:14.7%;background:#1a7a3a"></div>
+      <div style="position:absolute;left:14.7%;top:0;height:6px;width:25.7%;background:#3b82d4"></div>
+    </div>
+    <span style="font-size:10px;color:#9ca3af">of total calls</span>
+  </span>
+</div>
+
+<!-- 4-WEEK PERIOD KPI — SVG DIALS -->
+<div class="card">
+  <div class="card-title"><span></span>4-Week Period Totals — Jun 21, 2026 to Jul 18, 2026</div>
+  <div class="kpi-strip">
+    <div class="kpi-dial">
+      <div class="kdi-label">Total Calls</div>
+      <svg class="kdi-svg" xmlns="http://www.w3.org/2000/svg"><circle cx="36" cy="36" r="28" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#3b82d4" stroke-width="7" stroke-dasharray="175.9 0.0" stroke-dashoffset="44.0" stroke-linecap="round"/><text x="36" y="36" text-anchor="middle" font-size="10" font-weight="800" fill="#1f2328">16,777</text><text x="36" y="47" text-anchor="middle" font-size="8" fill="#57606a">4 wks</text></svg>
+      <div class="kdi-value" style="color:#3b82d4">16,777</div>
+      <div class="kdi-sub">across all 4 weeks</div>
+      <div class="kdi-delta dn">full period</div>
+    </div>
+    <div class="kpi-dial">
+      <div class="kdi-label">Containment</div>
+      <svg class="kdi-svg" xmlns="http://www.w3.org/2000/svg"><circle cx="36" cy="36" r="28" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#1a7a3a" stroke-width="7" stroke-dasharray="71.1 104.9" stroke-dashoffset="44.0" stroke-linecap="round"/><text x="36" y="39" text-anchor="middle" font-size="11" font-weight="800" fill="#1f2328">40.4%</text></svg>
+      <div class="kdi-value" style="color:#1a7a3a">6,775</div>
+      <div class="kdi-sub">calls contained</div>
+      <div class="kdi-delta dn">40.4% of total</div>
+    </div>
+    <div class="kpi-dial">
+      <div class="kdi-label">Watson Scheduled</div>
+      <svg class="kdi-svg" xmlns="http://www.w3.org/2000/svg"><circle cx="36" cy="36" r="28" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#1a7a3a" stroke-width="7" stroke-dasharray="51.7 124.2" stroke-dashoffset="44.0" stroke-linecap="round"/><text x="36" y="39" text-anchor="middle" font-size="11" font-weight="800" fill="#1f2328">14.7%</text></svg>
+      <div class="kdi-value" style="color:#1a7a3a">2,463</div>
+      <div class="kdi-sub">appts booked by Watson</div>
+      <div class="kdi-delta dn">14.7% of total</div>
+    </div>
+    <div class="kpi-dial">
+      <div class="kdi-label">Successfully Handled</div>
+      <svg class="kdi-svg" xmlns="http://www.w3.org/2000/svg"><circle cx="36" cy="36" r="28" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#3b82d4" stroke-width="7" stroke-dasharray="45.2 130.7" stroke-dashoffset="44.0" stroke-linecap="round"/><text x="36" y="39" text-anchor="middle" font-size="11" font-weight="800" fill="#1f2328">25.7%</text></svg>
+      <div class="kdi-value" style="color:#3b82d4">4,312</div>
+      <div class="kdi-sub">FAQ / no-agent handled</div>
+      <div class="kdi-delta dn">25.7% of total</div>
+    </div>
+    <div class="kpi-dial">
+      <div class="kdi-label">Transfer Rate</div>
+      <svg class="kdi-svg" xmlns="http://www.w3.org/2000/svg"><circle cx="36" cy="36" r="28" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#c0392b" stroke-width="7" stroke-dasharray="29.0 146.9" stroke-dashoffset="44.0" stroke-linecap="round"/><text x="36" y="39" text-anchor="middle" font-size="11" font-weight="800" fill="#1f2328">16.5%</text></svg>
+      <div class="kdi-value" style="color:#c0392b">2,774</div>
+      <div class="kdi-sub">routed to live agent</div>
+      <div class="kdi-delta dn">16.5% of total</div>
+    </div>
+    <div class="kpi-dial">
+      <div class="kdi-label">Avg AHT</div>
+      <svg class="kdi-svg" xmlns="http://www.w3.org/2000/svg"><circle cx="36" cy="36" r="28" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#b7770d" stroke-width="7" stroke-dasharray="88.0 88.0" stroke-dashoffset="44.0" stroke-linecap="round"/><text x="36" y="36" text-anchor="middle" font-size="10" font-weight="800" fill="#1f2328">116.0s</text><text x="36" y="47" text-anchor="middle" font-size="8" fill="#57606a">avg AHT</text></svg>
+      <div class="kdi-value" style="color:#b7770d">116.0s</div>
+      <div class="kdi-sub">weighted avg handle time</div>
+      <div class="kdi-delta dn">4-week weighted</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4-WEEK WEEKLY CARDS + TREND -->
+<div class="card">
+  <div class="card-title"><span></span>Week-by-Week Breakdown — W4 (Baseline) to W1 (Latest)</div>
+  <div class="wk-grid">
+    
+    <div class="wk-card current">
+      <div class="wk-label cur">W1 — Latest</div>
+      <div class="wk-dates">12-Jul-26 - 18-Jul-26</div>
+      <div class="wk-vol">4,731</div>
+      <div class="wk-sub">calls (+33% vs W4)</div>
+      <div class="metric-row">
+        <div class="metric-label">Containment</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:42.0%;background:#3b82d4"></div></div>
+        <div class="metric-val" style="color:#3b82d4">42.0%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Watson Scheduled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:16.2%;background:#1a7a3a"></div></div>
+        <div class="metric-val" style="color:#1a7a3a">16.2%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Successfully Handled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:25.8%;background:#3b82d4"></div></div>
+        <div class="metric-val" style="color:#3b82d4">25.8%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Transfer</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:16.8%;background:#c0392b"></div></div>
+        <div class="metric-val" style="color:#c0392b">16.8%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Dropped</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:28.7%;background:#b0b8c1"></div></div>
+        <div class="metric-val" style="color:#57606a">28.7%</div>
+      </div>
+    </div>
+    
+    <div class="wk-card">
+      <div class="wk-label">W2</div>
+      <div class="wk-dates">05-Jul-26 - 11-Jul-26</div>
+      <div class="wk-vol">4,743</div>
+      <div class="wk-sub">calls (mid period)</div>
+      <div class="metric-row">
+        <div class="metric-label">Containment</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:39.1%;background:#3b82d4;opacity:.7"></div></div>
+        <div class="metric-val" style="">39.1%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Watson Scheduled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:13.8%;background:#1a7a3a;opacity:.7"></div></div>
+        <div class="metric-val" style="color:#1a7a3a">13.8%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Successfully Handled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:25.3%;background:#3b82d4;opacity:.7"></div></div>
+        <div class="metric-val" style="color:#3b82d4">25.3%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Transfer</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:16.8%;background:#c0392b;opacity:.7"></div></div>
+        <div class="metric-val" style="color:#c0392b">16.8%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Dropped</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:28.5%;background:#b0b8c1"></div></div>
+        <div class="metric-val" style="color:#57606a">28.5%</div>
+      </div>
+    </div>
+    
+    <div class="wk-card">
+      <div class="wk-label">W3</div>
+      <div class="wk-dates">28-Jun-26 - 04-Jul-26</div>
+      <div class="wk-vol">3,746</div>
+      <div class="wk-sub">calls (mid period)</div>
+      <div class="metric-row">
+        <div class="metric-label">Containment</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:38.7%;background:#3b82d4;opacity:.7"></div></div>
+        <div class="metric-val" style="">38.7%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Watson Scheduled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:13.1%;background:#1a7a3a;opacity:.7"></div></div>
+        <div class="metric-val" style="color:#1a7a3a">13.1%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Successfully Handled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:25.6%;background:#3b82d4;opacity:.7"></div></div>
+        <div class="metric-val" style="color:#3b82d4">25.6%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Transfer</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:16.2%;background:#c0392b;opacity:.7"></div></div>
+        <div class="metric-val" style="color:#c0392b">16.2%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Dropped</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:29.3%;background:#b0b8c1"></div></div>
+        <div class="metric-val" style="color:#57606a">29.3%</div>
+      </div>
+    </div>
+    
+    <div class="wk-card">
+      <div class="wk-label">W4 — Baseline</div>
+      <div class="wk-dates">21-Jun-26 - 27-Jun-26</div>
+      <div class="wk-vol">3,557</div>
+      <div class="wk-sub">calls (baseline)</div>
+      <div class="metric-row">
+        <div class="metric-label">Containment</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:41.7%;background:#3b82d4;opacity:.5"></div></div>
+        <div class="metric-val" style="">41.7%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Watson Scheduled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:15.5%;background:#1a7a3a;opacity:.5"></div></div>
+        <div class="metric-val" style="color:#1a7a3a">15.5%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Successfully Handled</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:26.2%;background:#3b82d4;opacity:.5"></div></div>
+        <div class="metric-val" style="color:#3b82d4">26.2%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Transfer</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:16.2%;background:#c0392b;opacity:.5"></div></div>
+        <div class="metric-val" style="color:#c0392b">16.2%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">Dropped</div>
+        <div class="metric-bar"><div class="bar-inner" style="width:27.4%;background:#b0b8c1"></div></div>
+        <div class="metric-val" style="color:#57606a">27.4%</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:18px;border:2px solid #1a7a3a;border-radius:10px;padding:16px 14px 10px;background:#f6fdf8">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:800;color:#1a7a3a;text-transform:uppercase;letter-spacing:.06em">Containment % Trend — W4 to W1</div>
+      <div style="display:flex;gap:16px;font-size:11px;color:#57606a;align-items:center">
+        <span style="display:flex;align-items:center;gap:5px"><svg width="22" height="4" viewBox="0 0 22 4"><line x1="0" y1="2" x2="22" y2="2" stroke="#1a7a3a" stroke-width="3" stroke-linecap="round"/></svg>Containment%</span>
+        <span style="display:flex;align-items:center;gap:5px"><svg width="22" height="4" viewBox="0 0 22 4"><line x1="0" y1="2" x2="22" y2="2" stroke="#9ca3af" stroke-width="2" stroke-dasharray="4 2"/></svg>Transfer%</span>
+      </div>
+    </div>
+    <svg viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+      <!-- chart background -->
+      <rect x="48" y="18" width="732" height="118" fill="#ffffff" rx="4" stroke="#e5e7eb" stroke-width="1"/>
+      <!-- horizontal gridlines at 0%, 10%, 20%, 30%, 40%, 50% -->
+      <line x1="48" y1="136.0" x2="780" y2="136.0" stroke="#1a7a3a" stroke-width="1.5" stroke-dasharray=""/><text x="42" y="140.0" text-anchor="end" font-size="10" fill="#9ca3af">0%</text>
+<line x1="48" y1="112.4" x2="780" y2="112.4" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/><text x="42" y="116.4" text-anchor="end" font-size="10" fill="#9ca3af">10%</text>
+<line x1="48" y1="88.8" x2="780" y2="88.8" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/><text x="42" y="92.8" text-anchor="end" font-size="10" fill="#9ca3af">20%</text>
+<line x1="48" y1="65.2" x2="780" y2="65.2" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/><text x="42" y="69.2" text-anchor="end" font-size="10" fill="#9ca3af">30%</text>
+<line x1="48" y1="41.6" x2="780" y2="41.6" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/><text x="42" y="45.6" text-anchor="end" font-size="10" fill="#9ca3af">40%</text>
+<line x1="48" y1="18.0" x2="780" y2="18.0" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/><text x="42" y="22.0" text-anchor="end" font-size="10" fill="#9ca3af">50%</text>
+      <!-- shaded area under containment line -->
+      <polygon points="48,37.6 292,44.7 536,43.7 780,36.9 780,136 48,136" fill="#1a7a3a" fill-opacity="0.08"/>
+      <!-- transfer line -->
+      <polyline points="48,97.8 292,97.8 536,96.4 780,96.4" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="6 3" stroke-linejoin="round"/>
+      <!-- transfer dots -->
+      <circle cx="48" cy="97.8" r="3.5" fill="#9ca3af" stroke="#fff" stroke-width="1.5"/>
+<circle cx="292" cy="97.8" r="3.5" fill="#9ca3af" stroke="#fff" stroke-width="1.5"/>
+<circle cx="536" cy="96.4" r="3.5" fill="#9ca3af" stroke="#fff" stroke-width="1.5"/>
+<circle cx="780" cy="96.4" r="3.5" fill="#9ca3af" stroke="#fff" stroke-width="1.5"/>
+      <!-- containment line -->
+      <polyline points="48,37.6 292,44.7 536,43.7 780,36.9" fill="none" stroke="#1a7a3a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+      <!-- containment dots + value callouts -->
+      <circle cx="48" cy="37.6" r="5" fill="#1a7a3a" stroke="#fff" stroke-width="2"/><rect x="30" y="11.6" width="36" height="16" rx="4" fill="#1a7a3a" fill-opacity="0.9"/><text x="48" y="23.6" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">41.7%</text>
+<circle cx="292" cy="44.7" r="5" fill="#1a7a3a" stroke="#fff" stroke-width="2"/><rect x="274" y="18.7" width="36" height="16" rx="4" fill="#1a7a3a" fill-opacity="0.9"/><text x="292" y="30.7" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">38.7%</text>
+<circle cx="536" cy="43.7" r="5" fill="#1a7a3a" stroke="#fff" stroke-width="2"/><rect x="518" y="17.7" width="36" height="16" rx="4" fill="#1a7a3a" fill-opacity="0.9"/><text x="536" y="29.7" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">39.1%</text>
+<circle cx="780" cy="36.9" r="6" fill="#1a7a3a" stroke="#fff" stroke-width="2"/><rect x="762" y="10.9" width="36" height="16" rx="4" fill="#1a7a3a" fill-opacity="0.9"/><text x="780" y="22.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">42.0%</text>
+      <!-- x-axis week labels -->
+      <text x="48" y="152" text-anchor="middle" font-size="11" font-weight="600" fill="#57606a">W4</text>
+      <text x="48" y="166" text-anchor="middle" font-size="9" fill="#9ca3af">21-Jun-26 - 27-Jun-26</text>
+      <text x="292" y="152" text-anchor="middle" font-size="11" font-weight="600" fill="#57606a">W3</text>
+      <text x="292" y="166" text-anchor="middle" font-size="9" fill="#9ca3af">28-Jun-26 - 04-Jul-26</text>
+      <text x="536" y="152" text-anchor="middle" font-size="11" font-weight="600" fill="#57606a">W2</text>
+      <text x="536" y="166" text-anchor="middle" font-size="9" fill="#9ca3af">05-Jul-26 - 11-Jul-26</text>
+      <text x="780" y="152" text-anchor="middle" font-size="11" font-weight="800" fill="#1a7a3a">W1 (Latest)</text>
+      <text x="780" y="166" text-anchor="middle" font-size="9" fill="#9ca3af">12-Jul-26 - 18-Jul-26</text>
+    </svg>
+  </div>
+</div>
+
+<!-- 4-WEEK CALL OUTCOME DECOMPOSITION -->
+
+<div class="card" style="margin-bottom:10px;border:2px solid #93c5fd;background:#eff6ff;">
+  <div class="card-title"><span></span>W1 — Latest Call Outcome Decomposition — 12-Jul-26 - 18-Jul-26 &middot; 4,731 calls</div>
+  <div class="decomp-root">
+    <div>
+      <div style="font-size:14px;font-weight:700">All HVA Calls — W1 — Latest</div>
+      <div style="font-size:11px;opacity:.45;margin-top:2px">TLC: 4,213 (89.1%) &middot; Vaccine: 513 (10.8%)</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:24px;font-weight:800">4,731</div>
+      <div style="font-size:11px;opacity:.5">100% of calls</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-around;height:18px;position:relative;padding:0 4%;margin:4px 0">
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+  </div>
+  <div class="branch-grid">
+    <div class="bnode bn-contained">
+      <div class="bn-lbl" style="color:#1a7a3a">Contained</div>
+      <div class="bn-vol" style="color:#1a7a3a">1,985</div>
+      <div class="bn-pct" style="color:#1a7a3a">42.00% of total</div>
+      <div class="bn-divider" style="border-color:#74d4a0"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Scheduled</span><strong style="color:#1a7a3a">766</strong></div>
+        <div class="bn-row"><span>Sched%</span><strong style="color:#1a7a3a">16.20%</strong></div>
+        <div class="bn-row"><span>Successfully Handled</span><strong style="color:#3b82d4">1,219</strong></div>
+        <div class="bn-row"><span>Handled%</span><strong>25.80%</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-xfer">
+      <div class="bn-lbl" style="color:#c0392b">Transferred</div>
+      <div class="bn-vol" style="color:#c0392b">794</div>
+      <div class="bn-pct" style="color:#c0392b">16.80% of total</div>
+      <div class="bn-divider" style="border-color:#f5b8b8"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Transfer</span><strong>674</strong></div>
+        <div class="bn-row"><span>Watson Escalation</span><strong>120</strong></div>
+        <div class="bn-row"><span>Opt-Out</span><strong>139</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>34</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-drop">
+      <div class="bn-lbl">Watson Dropped</div>
+      <div class="bn-vol">1,359</div>
+      <div class="bn-pct">28.70% of total</div>
+      <div class="bn-divider" style="border-color:#d1d5db"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">+1.3pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-early">
+      <div class="bn-lbl" style="color:#7c5cd8">Early Dropped</div>
+      <div class="bn-vol" style="color:#7c5cd8">418</div>
+      <div class="bn-pct" style="color:#7c5cd8">8.80% of total</div>
+      <div class="bn-divider" style="border-color:#c3bdf5"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">-2.1pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-oos">
+      <div class="bn-lbl" style="color:#b7770d">Throttled / Other</div>
+      <div class="bn-vol" style="color:#b7770d">2</div>
+      <div class="bn-pct" style="color:#b7770d">0.00% of total</div>
+      <div class="bn-divider" style="border-color:#fcd34d"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Opt-Out</span><strong>139</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>34</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:10px;">
+  <div class="card-title"><span></span>W2 Call Outcome Decomposition — 05-Jul-26 - 11-Jul-26 &middot; 4,743 calls</div>
+  <div class="decomp-root">
+    <div>
+      <div style="font-size:14px;font-weight:700">All HVA Calls — W2</div>
+      <div style="font-size:11px;opacity:.45;margin-top:2px">TLC: 3,985 (84.0%) &middot; Vaccine: 756 (15.9%)</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:24px;font-weight:800">4,743</div>
+      <div style="font-size:11px;opacity:.5">100% of calls</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-around;height:18px;position:relative;padding:0 4%;margin:4px 0">
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+  </div>
+  <div class="branch-grid">
+    <div class="bnode bn-contained">
+      <div class="bn-lbl" style="color:#1a7a3a">Contained</div>
+      <div class="bn-vol" style="color:#1a7a3a">1,854</div>
+      <div class="bn-pct" style="color:#1a7a3a">39.10% of total</div>
+      <div class="bn-divider" style="border-color:#74d4a0"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Scheduled</span><strong style="color:#1a7a3a">654</strong></div>
+        <div class="bn-row"><span>Sched%</span><strong style="color:#1a7a3a">13.80%</strong></div>
+        <div class="bn-row"><span>Successfully Handled</span><strong style="color:#3b82d4">1,200</strong></div>
+        <div class="bn-row"><span>Handled%</span><strong>25.30%</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-xfer">
+      <div class="bn-lbl" style="color:#c0392b">Transferred</div>
+      <div class="bn-vol" style="color:#c0392b">795</div>
+      <div class="bn-pct" style="color:#c0392b">16.80% of total</div>
+      <div class="bn-divider" style="border-color:#f5b8b8"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Transfer</span><strong>665</strong></div>
+        <div class="bn-row"><span>Watson Escalation</span><strong>130</strong></div>
+        <div class="bn-row"><span>Opt-Out</span><strong>164</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>38</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-drop">
+      <div class="bn-lbl">Watson Dropped</div>
+      <div class="bn-vol">1,352</div>
+      <div class="bn-pct">28.50% of total</div>
+      <div class="bn-divider" style="border-color:#d1d5db"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">+1.1pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-early">
+      <div class="bn-lbl" style="color:#7c5cd8">Early Dropped</div>
+      <div class="bn-vol" style="color:#7c5cd8">535</div>
+      <div class="bn-pct" style="color:#7c5cd8">11.30% of total</div>
+      <div class="bn-divider" style="border-color:#c3bdf5"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">+0.4pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-oos">
+      <div class="bn-lbl" style="color:#b7770d">Throttled / Other</div>
+      <div class="bn-vol" style="color:#b7770d">5</div>
+      <div class="bn-pct" style="color:#b7770d">0.10% of total</div>
+      <div class="bn-divider" style="border-color:#fcd34d"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Opt-Out</span><strong>164</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>38</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:10px;">
+  <div class="card-title"><span></span>W3 Call Outcome Decomposition — 28-Jun-26 - 04-Jul-26 &middot; 3,746 calls</div>
+  <div class="decomp-root">
+    <div>
+      <div style="font-size:14px;font-weight:700">All HVA Calls — W3</div>
+      <div style="font-size:11px;opacity:.45;margin-top:2px">TLC: 3,120 (83.3%) &middot; Vaccine: 623 (16.6%)</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:24px;font-weight:800">3,746</div>
+      <div style="font-size:11px;opacity:.5">100% of calls</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-around;height:18px;position:relative;padding:0 4%;margin:4px 0">
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+  </div>
+  <div class="branch-grid">
+    <div class="bnode bn-contained">
+      <div class="bn-lbl" style="color:#1a7a3a">Contained</div>
+      <div class="bn-vol" style="color:#1a7a3a">1,451</div>
+      <div class="bn-pct" style="color:#1a7a3a">38.70% of total</div>
+      <div class="bn-divider" style="border-color:#74d4a0"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Scheduled</span><strong style="color:#1a7a3a">491</strong></div>
+        <div class="bn-row"><span>Sched%</span><strong style="color:#1a7a3a">13.10%</strong></div>
+        <div class="bn-row"><span>Successfully Handled</span><strong style="color:#3b82d4">960</strong></div>
+        <div class="bn-row"><span>Handled%</span><strong>25.60%</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-xfer">
+      <div class="bn-lbl" style="color:#c0392b">Transferred</div>
+      <div class="bn-vol" style="color:#c0392b">607</div>
+      <div class="bn-pct" style="color:#c0392b">16.20% of total</div>
+      <div class="bn-divider" style="border-color:#f5b8b8"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Transfer</span><strong>514</strong></div>
+        <div class="bn-row"><span>Watson Escalation</span><strong>93</strong></div>
+        <div class="bn-row"><span>Opt-Out</span><strong>91</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>34</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-drop">
+      <div class="bn-lbl">Watson Dropped</div>
+      <div class="bn-vol">1,098</div>
+      <div class="bn-pct">29.30% of total</div>
+      <div class="bn-divider" style="border-color:#d1d5db"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">+1.9pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-early">
+      <div class="bn-lbl" style="color:#7c5cd8">Early Dropped</div>
+      <div class="bn-vol" style="color:#7c5cd8">463</div>
+      <div class="bn-pct" style="color:#7c5cd8">12.40% of total</div>
+      <div class="bn-divider" style="border-color:#c3bdf5"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">+1.5pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-oos">
+      <div class="bn-lbl" style="color:#b7770d">Throttled / Other</div>
+      <div class="bn-vol" style="color:#b7770d">2</div>
+      <div class="bn-pct" style="color:#b7770d">0.10% of total</div>
+      <div class="bn-divider" style="border-color:#fcd34d"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Opt-Out</span><strong>91</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>34</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:10px;">
+  <div class="card-title"><span></span>W4 — Baseline Call Outcome Decomposition — 21-Jun-26 - 27-Jun-26 &middot; 3,557 calls</div>
+  <div class="decomp-root">
+    <div>
+      <div style="font-size:14px;font-weight:700">All HVA Calls — W4 — Baseline</div>
+      <div style="font-size:11px;opacity:.45;margin-top:2px">TLC: 3,253 (91.5%) &middot; Vaccine: 302 (8.5%)</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:24px;font-weight:800">3,557</div>
+      <div style="font-size:11px;opacity:.5">100% of calls</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-around;height:18px;position:relative;padding:0 4%;margin:4px 0">
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+    <div style="width:1px;height:18px;background:#e5e7eb;margin:0 auto"></div>
+  </div>
+  <div class="branch-grid">
+    <div class="bnode bn-contained">
+      <div class="bn-lbl" style="color:#1a7a3a">Contained</div>
+      <div class="bn-vol" style="color:#1a7a3a">1,485</div>
+      <div class="bn-pct" style="color:#1a7a3a">41.70% of total</div>
+      <div class="bn-divider" style="border-color:#74d4a0"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Scheduled</span><strong style="color:#1a7a3a">552</strong></div>
+        <div class="bn-row"><span>Sched%</span><strong style="color:#1a7a3a">15.50%</strong></div>
+        <div class="bn-row"><span>Successfully Handled</span><strong style="color:#3b82d4">933</strong></div>
+        <div class="bn-row"><span>Handled%</span><strong>26.20%</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-xfer">
+      <div class="bn-lbl" style="color:#c0392b">Transferred</div>
+      <div class="bn-vol" style="color:#c0392b">578</div>
+      <div class="bn-pct" style="color:#c0392b">16.20% of total</div>
+      <div class="bn-divider" style="border-color:#f5b8b8"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Watson Transfer</span><strong>479</strong></div>
+        <div class="bn-row"><span>Watson Escalation</span><strong>99</strong></div>
+        <div class="bn-row"><span>Opt-Out</span><strong>94</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>37</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-drop">
+      <div class="bn-lbl">Watson Dropped</div>
+      <div class="bn-vol">974</div>
+      <div class="bn-pct">27.40% of total</div>
+      <div class="bn-divider" style="border-color:#d1d5db"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">+0.0pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-early">
+      <div class="bn-lbl" style="color:#7c5cd8">Early Dropped</div>
+      <div class="bn-vol" style="color:#7c5cd8">386</div>
+      <div class="bn-pct" style="color:#7c5cd8">10.90% of total</div>
+      <div class="bn-divider" style="border-color:#c3bdf5"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>vs W4</span><strong style="color:#c0392b">+0.0pp</strong></div>
+      </div>
+    </div>
+    <div class="bnode bn-oos">
+      <div class="bn-lbl" style="color:#b7770d">Throttled / Other</div>
+      <div class="bn-vol" style="color:#b7770d">3</div>
+      <div class="bn-pct" style="color:#b7770d">0.10% of total</div>
+      <div class="bn-divider" style="border-color:#fcd34d"></div>
+      <div class="bn-items">
+        <div class="bn-row"><span>Opt-Out</span><strong>94</strong></div>
+        <div class="bn-row"><span>Out of Scope</span><strong>37</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- DECOMPOSITION TREE -->
+<style>
+/* ── decomp tree (scoped .dtr- prefix) ── */
+.dtr-stage{display:flex;align-items:flex-start;overflow-x:auto;gap:0;
+            padding:8px 6px 12px;min-height:220px}
+.dtr-root-col{flex:0 0 110px;display:flex;align-items:flex-start;
+               justify-content:center;padding:4px 2px}
+.dtr-root{background:linear-gradient(135deg,#1f2328 60%,#2e3a4a 100%);
+           color:#fff;border-radius:8px;padding:10px 12px;width:100px;
+           text-align:center;box-shadow:0 3px 8px rgba(37,99,235,.2)}
+.dtr-root-lbl{font-size:8px;opacity:.65;text-transform:uppercase;letter-spacing:.06em}
+.dtr-root-val{font-size:18px;font-weight:800;margin-top:2px;line-height:1}
+.dtr-root-sub{font-size:8px;opacity:.5;margin-top:2px}
+.dtr-conn{flex:0 0 28px;min-width:28px;position:relative;align-self:stretch}
+.dtr-conn svg{position:absolute;top:0;left:0;overflow:visible}
+.dtr-col{flex:0 0 152px;min-width:140px;display:flex;flex-direction:column}
+.dtr-col-hdr{padding:4px 7px 6px;border-bottom:2px solid var(--dlc,#2563eb);margin-bottom:4px}
+.dtr-col-lbl{font-size:8px;font-weight:800;text-transform:uppercase;
+              letter-spacing:.07em;color:var(--dlc,#2563eb)}
+.dtr-col-filter{display:flex;align-items:center;gap:3px;margin-top:3px;
+                 font-size:9px;color:#57606a;background:#f7f8fa;
+                 border-radius:4px;padding:2px 5px;border:1px solid #e5e7eb;cursor:pointer;width:fit-content}
+.dtr-col-filter:hover{background:#fee2e2;border-color:#fca5a5;color:#c0392b}
+.dtr-node{padding:5px 7px 4px;margin:1px 0;border-radius:5px;cursor:pointer;
+           border:1.5px solid #f0f0f0;background:#fff;transition:all .15s ease}
+.dtr-node:hover{border-color:var(--dlc,#2563eb);background:#f7f9ff;
+                 box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.dtr-node.dtr-sel{border-color:var(--dlc,#2563eb);background:#eff6ff;
+                   box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.dtr-node-top{display:flex;align-items:baseline;justify-content:space-between;gap:3px}
+.dtr-node-lbl{font-size:10px;font-weight:600;color:#1f2328;flex:1;
+               white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtr-node-cnt{font-size:10px;font-weight:800;color:#1f2328;flex-shrink:0}
+.dtr-node-pct{font-size:8px;color:#9ca3af;margin-top:1px}
+.dtr-bar-bg{height:3px;background:#e5e7eb;border-radius:2px;margin-top:3px}
+.dtr-bar-fill{height:3px;border-radius:2px;background:var(--dlc,#2563eb);transition:width .4s ease}
+.dtr-bc{display:flex;align-items:center;gap:4px;padding:5px 10px;
+         background:#f7f8fa;border-bottom:1px solid #f0f0f0;
+         font-size:10px;color:#57606a;flex-wrap:wrap;min-height:26px}
+.dtr-bc-item{color:#2563eb;font-weight:600;cursor:pointer;padding:1px 6px;
+              background:#eff6ff;border-radius:3px;border:1px solid #bfdbfe}
+.dtr-bc-item:hover{background:#dbeafe}
+.dtr-bc-sep{color:#d1d5db}
+.dtr-hint{font-size:10px;color:#9ca3af;padding:7px 10px;text-align:center}
+.dtr-ws-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+             margin-right:4px;flex-shrink:0}
+/* detail table */
+</style>
+
+<div class="card" style="max-width:100%;overflow:hidden">
+  <div class="card-title">
+    <span></span>Use-Case Decomposition Tree &mdash; Jun 21, 2026 to Jul 18, 2026
+  </div>
+  <div class="dtr-bc" id="dtr-bc"><span style="color:#57606a">Total Calls</span></div>
+  <div class="dtr-stage" id="dtr-stage"></div>
+  <div id="dtr-hint" class="dtr-hint">Click a <strong style="color:#2563eb">Use Case</strong> to start drilling down</div>
+</div>
+
+<script>
+(function(){
+const RAW   = [{"use_case": "Schedule Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "call_dropped", "calls": 1065}, {"use_case": "Schedule Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Successfully handled", "calls": 769}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "call_dropped", "calls": 700}, {"use_case": "Schedule Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Scheduled", "calls": 521}, {"use_case": "Modify Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Scheduled", "calls": 214}, {"use_case": "Cancel Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Scheduled", "calls": 203}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Successfully handled", "calls": 192}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Successfully handled", "calls": 185}, {"use_case": "Modify Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Scheduled", "calls": 182}, {"use_case": "Schedule Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Transfer", "calls": 166}, {"use_case": "Schedule Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "call_dropped", "calls": 161}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "call_dropped", "calls": 159}, {"use_case": "Status", "service": "Unidentified", "appt_type": "Unidentified", "watson_status": "Successfully handled", "calls": 156}, {"use_case": "Modify Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Successfully handled", "calls": 142}, {"use_case": "Modify Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "call_dropped", "calls": 140}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Watson Scheduled", "calls": 125}, {"use_case": "Schedule Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Escalation", "calls": 120}, {"use_case": "Schedule Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Successfully handled", "calls": 101}, {"use_case": "Schedule Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Transfer", "calls": 100}, {"use_case": "Schedule Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Successfully handled", "calls": 99}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "call_dropped", "calls": 90}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Scheduled", "calls": 89}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Watson Scheduled", "calls": 88}, {"use_case": "Modify Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Transfer", "calls": 88}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Transfer", "calls": 86}, {"use_case": "Cancel Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Successfully handled", "calls": 86}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Watson Scheduled", "calls": 84}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "call_dropped", "calls": 75}, {"use_case": "Schedule Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Watson Scheduled", "calls": 75}, {"use_case": "Cancel Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Scheduled", "calls": 67}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Successfully handled", "calls": 65}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Escalation", "calls": 64}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Successfully handled", "calls": 59}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "call_dropped", "calls": 55}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Successfully handled", "calls": 55}, {"use_case": "Schedule Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "call_dropped", "calls": 55}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Successfully handled", "calls": 54}, {"use_case": "Modify Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "call_dropped", "calls": 52}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Watson Scheduled", "calls": 52}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Watson Scheduled", "calls": 52}, {"use_case": "Modify Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Escalation", "calls": 51}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Watson Scheduled", "calls": 50}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Watson Transfer", "calls": 49}, {"use_case": "Schedule Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Watson Transfer", "calls": 49}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "call_dropped", "calls": 47}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Scheduled", "calls": 44}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "call_dropped", "calls": 43}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Minor injuries", "watson_status": "call_dropped", "calls": 41}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Watson Scheduled", "calls": 40}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Watson Scheduled", "calls": 40}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Standard", "watson_status": "Successfully handled", "calls": 40}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Covid", "watson_status": "call_dropped", "calls": 40}, {"use_case": "Cancel Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Transfer", "calls": 39}, {"use_case": "Status", "service": "Unidentified", "appt_type": "Unidentified", "watson_status": "Watson Transfer", "calls": 36}, {"use_case": "Status", "service": "Unidentified", "appt_type": "Unidentified", "watson_status": "call_dropped", "calls": 35}, {"use_case": "Cancel Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "call_dropped", "calls": 35}, {"use_case": "Modify Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Watson Scheduled", "calls": 34}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Watson Scheduled", "calls": 32}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Tetanus-Diphtheria", "watson_status": "call_dropped", "calls": 32}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Successfully handled", "calls": 31}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Scheduled", "calls": 31}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Watson Scheduled", "calls": 30}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Minor injuries", "watson_status": "Successfully handled", "calls": 30}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Standard", "watson_status": "Watson Transfer", "calls": 30}, {"use_case": "Schedule Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Watson Scheduled", "calls": 27}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Covid", "watson_status": "Successfully handled", "calls": 27}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Watson Scheduled", "calls": 27}, {"use_case": "Schedule Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Watson Escalation", "calls": 27}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "call_dropped", "calls": 25}, {"use_case": "Status", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Successfully handled", "calls": 25}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Standard", "watson_status": "call_dropped", "calls": 24}, {"use_case": "Schedule Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "call_dropped", "calls": 24}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Watson Scheduled", "calls": 24}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Scheduled", "calls": 22}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Watson Scheduled", "calls": 22}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Watson Transfer", "calls": 20}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Watson Transfer", "calls": 20}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Watson Scheduled", "calls": 19}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult School", "watson_status": "Successfully handled", "calls": 19}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Watson Transfer", "calls": 19}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Scheduled", "calls": 18}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Watson Scheduled", "calls": 17}, {"use_case": "Status", "service": "Physicals", "appt_type": "Sports", "watson_status": "Successfully handled", "calls": 17}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "call_dropped", "calls": 17}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "call_dropped", "calls": 17}, {"use_case": "Schedule Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Successfully handled", "calls": 17}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Flu", "watson_status": "call_dropped", "calls": 17}, {"use_case": "Status", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Successfully handled", "calls": 16}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Watson Scheduled", "calls": 16}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "call_dropped", "calls": 16}, {"use_case": "Cancel Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Watson Scheduled", "calls": 15}, {"use_case": "Cancel Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Escalation", "calls": 15}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Watson Escalation", "calls": 15}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Watson Transfer", "calls": 15}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Sports", "watson_status": "Successfully handled", "calls": 15}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "High School Work Permit (14-19 yrs old)", "watson_status": "Successfully handled", "calls": 15}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Successfully handled", "calls": 14}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "High School Work Permit (14-19 yrs old)", "watson_status": "call_dropped", "calls": 14}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "call_dropped", "calls": 14}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Watson Scheduled", "calls": 14}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Minor injuries", "watson_status": "Watson Scheduled", "calls": 13}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Tetanus-Diphtheria", "watson_status": "Successfully handled", "calls": 13}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult School", "watson_status": "call_dropped", "calls": 12}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Camp Counselor Work Permit", "watson_status": "Successfully handled", "calls": 12}, {"use_case": "Schedule Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Successfully handled", "calls": 12}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "call_dropped", "calls": 12}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Camp Counselor Work Permit", "watson_status": "Watson Transfer", "calls": 12}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Early Dropped", "calls": 11}, {"use_case": "Cancel Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Watson Scheduled", "calls": 11}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Scheduled", "calls": 11}, {"use_case": "Schedule Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "call_dropped", "calls": 11}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "Watson Scheduled", "calls": 11}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Successfully handled", "calls": 11}, {"use_case": "Modify Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "call_dropped", "calls": 10}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Watson Scheduled", "calls": 10}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Watson Transfer", "calls": 10}, {"use_case": "Status", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Successfully handled", "calls": 10}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "Successfully handled", "calls": 10}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Watson Escalation", "calls": 9}, {"use_case": "Modify Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Escalation", "calls": 9}, {"use_case": "Modify Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Successfully handled", "calls": 9}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Chicken pox", "watson_status": "call_dropped", "calls": 9}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "call_dropped", "calls": 9}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "call_dropped", "calls": 8}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "call_dropped", "calls": 8}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "call_dropped", "calls": 8}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult School", "watson_status": "Watson Transfer", "calls": 8}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "Watson Transfer", "calls": 8}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "Watson Scheduled", "calls": 8}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Watson Scheduled", "calls": 8}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "call_dropped", "calls": 8}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Successfully handled", "calls": 8}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Watson Scheduled", "calls": 8}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "Watson Transfer", "calls": 7}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Scheduled", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "Successfully handled", "calls": 7}, {"use_case": "Modify Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Watson Scheduled", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Flu", "watson_status": "Successfully handled", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Watson Transfer", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "Successfully handled", "calls": 7}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Watson Scheduled", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Minor injuries", "watson_status": "Watson Escalation", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "call_dropped", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "High School Work Permit (14-19 yrs old)", "watson_status": "Watson Transfer", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Successfully handled", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Sports", "watson_status": "Watson Transfer", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Transfer", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Watson Transfer", "calls": 7}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Successfully handled", "calls": 7}, {"use_case": "Status", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Successfully handled", "calls": 7}, {"use_case": "Status", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Successfully handled", "calls": 6}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis A", "watson_status": "call_dropped", "calls": 6}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Covid", "watson_status": "Watson Scheduled", "calls": 6}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Covid", "watson_status": "Watson Transfer", "calls": 6}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Watson Escalation", "calls": 6}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Minor injuries", "watson_status": "Watson Transfer", "calls": 6}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Watson Transfer", "calls": 6}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Tetanus-Diphtheria", "watson_status": "Watson Scheduled", "calls": 6}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "call_dropped", "calls": 5}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Escalation", "calls": 5}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "call_dropped", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Watson Escalation", "calls": 5}, {"use_case": "Schedule Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Scheduled", "calls": 5}, {"use_case": "Modify Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Watson Transfer", "calls": 5}, {"use_case": "Status", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Successfully handled", "calls": 5}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Successfully handled", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Watson Escalation", "calls": 5}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Watson Escalation", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Watson Escalation", "calls": 5}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Successfully handled", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "Watson Scheduled", "calls": 5}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "Watson Scheduled", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Successfully handled", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Scheduled", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Sports", "watson_status": "call_dropped", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Watson Escalation", "calls": 5}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Successfully handled", "calls": 5}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Typhoid", "watson_status": "call_dropped", "calls": 4}, {"use_case": "Modify Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Watson Escalation", "calls": 4}, {"use_case": "Modify Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Successfully handled", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Measles", "watson_status": "Successfully handled", "calls": 4}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Escalation", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "Watson Escalation", "calls": 4}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Watson Scheduled", "calls": 4}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Successfully handled", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Covid", "watson_status": "Watson Escalation", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "call_dropped", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Early Dropped", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Human Papilloma Virus", "watson_status": "call_dropped", "calls": 4}, {"use_case": "Cancel Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Successfully handled", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Watson Transfer", "calls": 4}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Successfully handled", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Scheduled", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Mental health", "watson_status": "call_dropped", "calls": 4}, {"use_case": "Modify Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Transfer", "calls": 4}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Watson Escalation", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Measles", "watson_status": "call_dropped", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Camp Counselor Work Permit", "watson_status": "call_dropped", "calls": 4}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Successfully handled", "calls": 4}, {"use_case": "Modify Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "call_dropped", "calls": 4}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Watson Scheduled", "calls": 4}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Measles", "watson_status": "Watson Transfer", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "Watson Transfer", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "RSV (Respiratory Syncytial Virus)", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Flu", "watson_status": "Watson Transfer", "calls": 3}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Watson Escalation", "calls": 3}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Cancel Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Tetanus-Diphtheria", "watson_status": "Watson Transfer", "calls": 3}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Watson Escalation", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Successfully handled", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Mental health", "watson_status": "Successfully handled", "calls": 3}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Typhoid", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Successfully handled", "calls": 3}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Watson Transfer", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "Successfully handled", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Polio", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Watson Scheduled", "calls": 3}, {"use_case": "Modify Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Early Dropped", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "Watson Escalation", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "call_dropped", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Transfer", "calls": 3}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "Watson Escalation", "calls": 3}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Flu", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "RSV (Respiratory Syncytial Virus)", "watson_status": "Watson Scheduled", "calls": 2}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "Watson Scheduled", "calls": 2}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Covid 19 Antibody test", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Status", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Watson Escalation", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Mental health", "watson_status": "Watson Transfer", "calls": 2}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Modify Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "call_dropped", "calls": 2}, {"use_case": "FAQ", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Travel vaccine & consultation-Pre-travel Consultation / Preventative Care", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "Watson Scheduled", "calls": 2}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Cancel Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Life Event (Foster Care, Marriage, Adoption)", "watson_status": "call_dropped", "calls": 2}, {"use_case": "Cancel Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Transfer", "calls": 2}, {"use_case": "Cancel Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Escalation", "calls": 2}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "Watson Scheduled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Flu", "watson_status": "Watson Scheduled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis A", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Watson Escalation", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Watson Scheduled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "RSV (Respiratory Syncytial Virus)", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Typhoid", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Mental health", "watson_status": "Watson Scheduled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Escalation", "calls": 2}, {"use_case": "Status", "service": "Physicals", "appt_type": "Camp", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Status", "service": "Unidentified", "appt_type": "Unidentified", "watson_status": "Watson Early Dropped", "calls": 2}, {"use_case": "Status", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Successfully handled", "calls": 2}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Human Papilloma Virus", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Human Papilloma Virus", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "Sports", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Status", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult School", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Throttled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Polio", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Polio", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "call_dropped", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "RSV (Respiratory Syncytial Virus)", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "RSV (Respiratory Syncytial Virus)", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Travel vaccine & consultation-Pre-travel Consultation / Preventative Care", "watson_status": "call_dropped", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Travel vaccine & consultation-Pre-travel Consultation / Preventative Care", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Travel vaccine & consultation-Pre-travel Consultation / Preventative Care", "watson_status": "Watson Scheduled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Watson Scheduled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Tetanus-Diphtheria", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Cancel Appointment", "service": "(Blank)", "appt_type": "(Blank)", "watson_status": "Throttled", "calls": 1}, {"use_case": "Modify Appointment", "service": "DOT Physicals", "appt_type": "Dept of Transportation Physical", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Status", "service": "Vaccine Appointment", "appt_type": "Meningitis", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Typhoid", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Health Screening Appointment", "appt_type": "Biometric Screenings", "watson_status": "Throttled", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Mental health", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Covid 19 viral test", "watson_status": "call_dropped", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Covid 19 Antibody test", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Non Vaccine Appointment", "appt_type": "Covid 19 Antibody test", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Reproductive and sexual health", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Status", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis A", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Travel vaccine & consultation-Pre-travel Consultation / Preventative Care", "watson_status": "Watson Scheduled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Mental health", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Travel vaccine & consultation-Pre-travel Consultation / Preventative Care", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Non Vaccine Appointment", "appt_type": "Tuberculosis", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Modify Appointment", "service": "Virtual visit", "appt_type": "Virtual visit", "watson_status": "Watson Scheduled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "shingles", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Typhoid", "watson_status": "Watson Scheduled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Rabies", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Throttled", "calls": 1}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Preventive and ongoing care", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "RSV (Respiratory Syncytial Virus)", "watson_status": "call_dropped", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Polio", "watson_status": "Watson Scheduled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Pneumonia", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Status", "service": "Non Vaccine Appointment", "appt_type": "Weight Management", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Injections", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Status", "service": "Not feeling well", "appt_type": "Not feeling well", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Status", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Covid", "watson_status": "call_dropped", "calls": 1}, {"use_case": "Status", "service": "Physicals", "appt_type": "School", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "call_dropped", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Chicken pox", "watson_status": "Watson Transfer", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Chicken pox", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Status", "service": "Physicals", "appt_type": "Sports", "watson_status": "call_dropped", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Physicals", "appt_type": "Standard", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Skin conditions, hair, nails", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Non Vaccine Appointment", "appt_type": "Ear Wax removal", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Schedule Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis A", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Watson Escalation", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "Camp", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Physicals", "appt_type": "Adult Life Event (Foster Care, Marriage, Adoption)", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Modify Appointment", "service": "Vaccine Appointment", "appt_type": "Hepatitis B", "watson_status": "Successfully handled", "calls": 1}, {"use_case": "Cancel Appointment", "service": "Physicals", "appt_type": "School", "watson_status": "Successfully handled", "calls": 1}];
+const TOTAL = 9433;
+const LC    = ["#2563eb", "#0ea5e9", "#7c3aed", "#db2777"];
+const SCOL  = {"Watson Scheduled": "#1a7a3a", "Successfully handled": "#3b82d4", "Watson Transfer": "#c0392b", "Watson Escalation": "#e67e22", "Watson Opt Out": "#8e44ad", "Watson Early Dropped": "#7c5cd8", "Watson Dropped": "#57606a", "call_dropped": "#57606a", "Watson Out of Scope": "#b7770d", "Throttled": "#95a5a6"};
+const KEYS  = ["use_case","service","appt_type","watson_status"];
+const LBLS  = ["Use Case","Service","Appointment Type","Watson Status"];
+const SEL   = [null,null,null,null];
+
+const fmt  = n  => Number(n).toLocaleString();
+const scol = ws => SCOL[ws]||"#57606a";
+
+function fRows(d){
+  return RAW.filter(r=>KEYS.slice(0,d).every((k,i)=>SEL[i]===null||r[k]===SEL[i]));
+}
+function agg(rows,lvl){
+  const m={};
+  rows.forEach(r=>{m[r[KEYS[lvl]]]=(m[r[KEYS[lvl]]]||0)+r.calls;});
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function el(t,c){const e=document.createElement(t);if(c)e.className=c;return e;}
+
+function render(){
+  renderBC();
+  renderTree();
+}
+
+/* ── Breadcrumb ── */
+function renderBC(){
+  const bc=document.getElementById("dtr-bc");
+  bc.innerHTML=`<span style="color:#57606a">Total Calls</span>`;
+  SEL.forEach((s,i)=>{
+    if(s===null)return;
+    bc.innerHTML+=`<span class="dtr-bc-sep">&#9656;</span>
+      <span class="dtr-bc-item" onclick="dtrClear(${i})" title="Clear from here">${s} &times;</span>`;
+  });
+}
+
+/* ── Tree ── */
+function renderTree(){
+  const stage=document.getElementById("dtr-stage");
+  stage.innerHTML="";
+  const hint=document.getElementById("dtr-hint");
+
+  const first=SEL.findIndex(s=>s===null);
+  const showTo=first===-1?KEYS.length-1:Math.max(0,first);
+
+  const rc=fRows(0).reduce((s,r)=>s+r.calls,0);
+  const rootCol=el("div","dtr-root-col");
+  rootCol.innerHTML=`<div class="dtr-root">
+    <div class="dtr-root-lbl">Total Calls</div>
+    <div class="dtr-root-val">${fmt(rc)}</div>
+    <div class="dtr-root-sub">matched calls</div>
+  </div>`;
+  stage.appendChild(rootCol);
+
+  let hasNodes=false;
+  for(let lvl=0;lvl<=showTo;lvl++){
+    const conn=el("div","dtr-conn");conn.id="dtrc-"+lvl;stage.appendChild(conn);
+    const rows=fRows(lvl);
+    const items=agg(rows,lvl);
+    const colTot=items.reduce((s,x)=>s+x[1],0);
+    const lc=LC[lvl];
+    const dcol=el("div","dtr-col");dcol.style.setProperty("--dlc",lc);
+
+    const chdr=el("div","dtr-col-hdr");chdr.style.setProperty("--dlc",lc);
+    let hh=`<div class="dtr-col-lbl">${LBLS[lvl]}</div>`;
+    if(SEL[lvl]!==null){
+      hh+=`<div class="dtr-col-filter" onclick="dtrClear(${lvl})">
+        <span style="font-weight:700;color:#c0392b">&#10005;</span>
+        <span style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${SEL[lvl]}">${SEL[lvl]}</span>
+      </div>`;
+    }
+    chdr.innerHTML=hh;dcol.appendChild(chdr);
+
+    items.forEach(([label,cnt])=>{
+      const p=colTot>0?cnt*100/colTot:0;
+      const isWs=lvl===3;
+      const node=el("div","dtr-node"+(isWs?" dtr-ws":""));
+      if(SEL[lvl]===label)node.classList.add("dtr-sel");
+      node.style.setProperty("--dlc",isWs?scol(label):lc);
+      node.id="dtn-"+lvl+"-"+label.replace(/[^a-z0-9]/gi,"_");
+      const dotHtml=isWs?`<span class="dtr-ws-dot" style="background:${scol(label)}"></span>`:"";
+      const shortLbl=label.length>24?label.slice(0,23)+"…":label;
+      node.innerHTML=`
+        <div class="dtr-node-top">
+          <span class="dtr-node-lbl" title="${label}">${dotHtml}${shortLbl}</span>
+          <span class="dtr-node-cnt">${fmt(cnt)}</span>
+        </div>
+        <div class="dtr-node-pct">${p.toFixed(1)}% of ${LBLS[lvl].toLowerCase()}</div>
+        <div class="dtr-bar-bg"><div class="dtr-bar-fill" style="width:${Math.min(p,100).toFixed(1)}%"></div></div>`;
+      node.onclick=()=>dtrSel(lvl,label);
+      dcol.appendChild(node);
+      hasNodes=true;
+    });
+    stage.appendChild(dcol);
+  }
+
+  hint.style.display=hasNodes&&SEL[0]!==null?"none":"block";
+  requestAnimationFrame(()=>drawConns(showTo));
+}
+
+/* ── SVG bezier connectors ── */
+function drawConns(showTo){
+  for(let lvl=0;lvl<=showTo;lvl++){
+    const cd=document.getElementById("dtrc-"+lvl);if(!cd)continue;
+    const srcEl=lvl===0
+      ?document.querySelector(".dtr-root")
+      :(SEL[lvl-1]?document.getElementById("dtn-"+(lvl-1)+"-"+SEL[lvl-1].replace(/[^a-z0-9]/gi,"_")):null);
+    const cols=document.querySelectorAll(".dtr-col");
+    const tc=cols[lvl];if(!tc||!srcEl)continue;
+    const nodes=tc.querySelectorAll(".dtr-node");if(!nodes.length)continue;
+    const cr=cd.getBoundingClientRect();
+    const h=Math.max(cd.offsetHeight,100);
+    const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("width","28");svg.setAttribute("height",h);
+    svg.style.cssText="overflow:visible;width:28px;height:"+h+"px";
+    const sr=srcEl.getBoundingClientRect();
+    const x1=2,y1=sr.top+sr.height/2-cr.top;
+    const lc=LC[lvl];
+    nodes.forEach(n=>{
+      const nr=n.getBoundingClientRect();
+      const x2=26,y2=nr.top+nr.height/2-cr.top,mx=(x1+x2)/2;
+      const sel=n.classList.contains("dtr-sel");
+      const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+      p.setAttribute("d",`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+      p.setAttribute("fill","none");
+      p.setAttribute("stroke",sel?lc:"#d1d5db");
+      p.setAttribute("stroke-width",sel?"2.5":"1.5");
+      p.setAttribute("opacity",sel?"1":"0.55");
+      svg.appendChild(p);
+    });
+    cd.innerHTML="";cd.appendChild(svg);
+  }
+}
+
+
+window.dtrSel=function(level,label){
+  if(SEL[level]===label){dtrClear(level);return;}
+  SEL[level]=label;
+  for(let i=level+1;i<SEL.length;i++)SEL[i]=null;
+  render();
+};
+window.dtrClear=function(level){
+  for(let i=level;i<SEL.length;i++)SEL[i]=null;
+  render();
+};
+
+render();
+})();
+</script>
+
+<!-- DOW HEATMAP -->
+<div class="card">
+  <div class="card-title"><span></span>Day-of-Week Pattern — 4-Week Average</div>
+  <div class="dow-strip">
+    <div class="dow-tile" style="background:#eefbf3;border-color:#a7dbb8">
+      <div class="dt-day">Sun</div>
+      <div class="dt-vol">297 avg</div>
+      <div class="dt-contain" style="color:#1a7a3a">42.9% &#9650;</div>
+      <div class="dt-sched" style="color:#1a7a3a">WS 16.9%</div>
+      <div class="dt-xfer" style="color:#1a7a3a">Xfer 15.3%</div>
+      <div class="dt-aht">AHT 112.0s</div>
+    </div>
+    <div class="dow-tile" style="background:#f7f8fa;border-color:#e5e7eb">
+      <div class="dt-day">Mon</div>
+      <div class="dt-vol">785 avg</div>
+      <div class="dt-contain" style="color:#3b82d4">41.6%</div>
+      <div class="dt-sched" style="color:#1a7a3a">WS 14.2%</div>
+      <div class="dt-xfer" style="color:#b7770d">Xfer 20.3%</div>
+      <div class="dt-aht">AHT 121.2s</div>
+    </div>
+    <div class="dow-tile" style="background:#fff5f5;border-color:#f5b8b8">
+      <div class="dt-day">Tue</div>
+      <div class="dt-vol">690 avg</div>
+      <div class="dt-contain" style="color:#c0392b">38.1% &#9660;</div>
+      <div class="dt-sched" style="color:#1a7a3a">WS 14.6%</div>
+      <div class="dt-xfer" style="color:#c0392b">Xfer 22.5%</div>
+      <div class="dt-aht">AHT 113.3s</div>
+    </div>
+    <div class="dow-tile" style="background:#f7f8fa;border-color:#e5e7eb">
+      <div class="dt-day">Wed</div>
+      <div class="dt-vol">725 avg</div>
+      <div class="dt-contain" style="color:#3b82d4">39.6%</div>
+      <div class="dt-sched" style="color:#1a7a3a">WS 14.2%</div>
+      <div class="dt-xfer" style="color:#b7770d">Xfer 21.5%</div>
+      <div class="dt-aht">AHT 114.4s</div>
+    </div>
+    <div class="dow-tile" style="background:#f7f8fa;border-color:#e5e7eb">
+      <div class="dt-day">Thu</div>
+      <div class="dt-vol">716 avg</div>
+      <div class="dt-contain" style="color:#3b82d4">39.8%</div>
+      <div class="dt-sched" style="color:#1a7a3a">WS 14.7%</div>
+      <div class="dt-xfer" style="color:#c0392b">Xfer 22.5%</div>
+      <div class="dt-aht">AHT 114.3s</div>
+    </div>
+    <div class="dow-tile" style="background:#f0f7ff;border-color:#93c5fd">
+      <div class="dt-day">Fri</div>
+      <div class="dt-vol">625 avg</div>
+      <div class="dt-contain" style="color:#3b82d4">41.4%</div>
+      <div class="dt-sched" style="color:#1a7a3a">WS 14.9%</div>
+      <div class="dt-xfer" style="color:#b7770d">Xfer 18.8%</div>
+      <div class="dt-aht">AHT 116.9s</div>
+    </div>
+    <div class="dow-tile" style="background:#f7f8fa;border-color:#e5e7eb">
+      <div class="dt-day">Sat</div>
+      <div class="dt-vol">358 avg</div>
+      <div class="dt-contain" style="color:#3b82d4">41.0%</div>
+      <div class="dt-sched" style="color:#1a7a3a">WS 14.5%</div>
+      <div class="dt-xfer" style="color:#1a7a3a">Xfer 15.9%</div>
+      <div class="dt-aht">AHT 117.9s</div>
+    </div></div>
+  <div style="font-size:10px;color:#57606a;margin-top:8px">
+    <span style="background:#eefbf3;padding:2px 6px;border-radius:3px;margin-right:6px">Best containment: Sun 42.9%</span>
+    <span style="background:#fff5f5;padding:2px 6px;border-radius:3px">Lowest containment: Tue 38.1%</span>
+  </div>
+</div>
+
+<!-- TRANSFER DESTINATIONS -->
+<div class="card">
+  <div class="card-title"><span></span>Transfer Destinations — W1 vs W4</div>
+  <div class="xfer-bars">
+    <div>
+      <div class="xb-title">W1 — 12-Jul-26 - 18-Jul-26 (794 transfers)</div>
+      <div class="xb-row"><span class="xb-label">TLCSupport</span><div class="xb-bar-bg"><div class="xb-bar-fill" style="width:100%"></div></div><span class="xb-val">731</span></div><div class="xb-row"><span class="xb-label">KHCSupport</span><div class="xb-bar-bg"><div class="xb-bar-fill" style="width:9%"></div></div><span class="xb-val">63</span></div>
+    </div>
+    <div>
+      <div class="xb-title">W4 — 21-Jun-26 - 27-Jun-26 (578 transfers)</div>
+      <div class="xb-row"><span class="xb-label">TLCSupport</span><div class="xb-bar-bg"><div class="xb-bar-fill" style="width:100%"></div></div><span class="xb-val">537</span></div><div class="xb-row"><span class="xb-label">KHCSupport</span><div class="xb-bar-bg"><div class="xb-bar-fill" style="width:8%"></div></div><span class="xb-val">41</span></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
