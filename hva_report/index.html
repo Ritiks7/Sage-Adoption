@@ -116,19 +116,38 @@ body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;font-size:14px;li
 .xb-val{font-size:11px;font-weight:700;color:#c0392b;width:34px;text-align:right;flex-shrink:0}
 .chart-wrap{overflow-x:auto}
 .rpt-footer{text-align:center;font-size:11px;color:#57606a;padding-top:14px;border-top:1px solid #e5e7eb;margin-top:6px}
-/* ── Print / Save PDF button ── */
-.print-bar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e5e7eb;
-            padding:8px 18px;display:flex;align-items:center;gap:10px;margin-bottom:0}
-.print-btn{display:inline-flex;align-items:center;gap:6px;background:#1f2328;color:#fff;
-            border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;
-            cursor:pointer;letter-spacing:.02em;font-family:inherit}
-.print-btn:hover{background:#3b82d4}
-.print-btn svg{flex-shrink:0}
-.print-hint{font-size:11px;color:#9ca3af}
+/* ── Print / PDF optimisation ── */
 @media print{
-  .print-bar{display:none!important}
-  body{background:#fff!important}
-  .page{padding:10px 6px!important}
+  /* Page setup */
+  @page{margin:12mm 10mm;size:A4}
+  html,body{background:#fff!important;font-size:11px}
+  .page{max-width:100%!important;padding:0!important;margin:0!important}
+  /* Never split inside a card */
+  .card,.hdr,.wk-card,.bnode,.dow-tile,.kpi-dial,
+  .decomp-root,.branch-grid,.xfer-bars{
+    page-break-inside:avoid!important;
+    break-inside:avoid!important
+  }
+  /* Force a new page before heavy sections */
+  .card{page-break-before:auto;break-before:auto;margin-bottom:8px!important}
+  /* Each decomp-card (per-week breakdown) on its own page */
+  .card[style*="margin-bottom:10px"]{page-break-before:always;break-before:page}
+  /* Decomp tree on its own page */
+  #dtr-stage{page-break-before:always;break-before:page}
+  /* Keep grid rows together */
+  .wk-grid,.kpi-strip,.period-kpi,.branch-grid,.dow-strip,.xfer-bars{
+    page-break-inside:avoid!important;break-inside:avoid!important
+  }
+  /* Shrink shadows/gradients for print */
+  .hdr{border-radius:6px!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  /* Hide interactive hint */
+  .dtr-hint,.dtr-bc{display:none!important}
+  /* Tighten spacing */
+  .card{padding:12px 14px!important}
+  .card-title{margin-bottom:8px!important}
+  .kpi-dial{padding:10px 6px!important}
+  .wk-card{padding:10px 8px!important}
 }
 @media(max-width:620px){
   .kpi-strip,.period-kpi{grid-template-columns:repeat(2,1fr)}
@@ -140,18 +159,6 @@ body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;font-size:14px;li
 </style>
 </head>
 <body>
-<div class="print-bar">
-  <button class="print-btn" onclick="window.print()">
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4 6V1h8v5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-      <rect x="1" y="6" width="14" height="7" rx="1.5" stroke="#fff" stroke-width="1.5"/>
-      <path d="M4 10h8M4 13h8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
-      <circle cx="3.5" cy="9" r="0.8" fill="#fff"/>
-    </svg>
-    Print / Save as PDF
-  </button>
-  <span class="print-hint">Use your browser's print dialog &rarr; "Save as PDF" to export</span>
-</div>
 <div class="page">
 
 <!-- HEADER -->
